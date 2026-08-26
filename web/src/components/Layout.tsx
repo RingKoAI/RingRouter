@@ -23,11 +23,14 @@ export default function Layout() {
     navigate('/')
   }
 
-  const toggleLang = () => {
-    const next = i18n.language === 'zh' ? 'en' : 'zh'
-    i18n.changeLanguage(next)
-    setLangOpen(false)
-  }
+  const languages = [
+    { code: 'zh', label: '简体中文' },
+    { code: 'zh-TW', label: '繁體中文（台灣）' },
+    { code: 'zh-HK', label: '繁體中文（香港）' },
+    { code: 'en', label: 'English' },
+  ]
+
+  const currentLangLabel = languages.find((l) => l.code === i18n.language)?.label || 'English'
 
   const themeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
 
@@ -98,26 +101,21 @@ export default function Layout() {
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text-muted hover:bg-surface-alt hover:text-text w-full transition-colors"
           >
             <Globe size={18} />
-            {i18n.language === 'zh' ? '中文' : 'English'}
+            {currentLangLabel}
           </button>
           {langOpen && (
-            <div className="absolute bottom-full left-2 mb-1 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg py-1 w-40 z-50">
-              <button
-                onClick={() => { i18n.changeLanguage('zh'); setLangOpen(false) }}
-                className={`block px-3 py-1.5 text-sm w-full text-left hover:bg-surface-alt transition-colors ${
-                  i18n.language === 'zh' ? 'text-primary font-medium' : 'text-text-muted'
-                }`}
-              >
-                中文
-              </button>
-              <button
-                onClick={() => { i18n.changeLanguage('en'); setLangOpen(false) }}
-                className={`block px-3 py-1.5 text-sm w-full text-left hover:bg-surface-alt transition-colors ${
-                  i18n.language === 'en' ? 'text-primary font-medium' : 'text-text-muted'
-                }`}
-              >
-                English
-              </button>
+            <div className="absolute bottom-full left-2 mb-1 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg py-1 w-44 z-50">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => { i18n.changeLanguage(lang.code); setLangOpen(false) }}
+                  className={`block px-3 py-1.5 text-sm w-full text-left hover:bg-surface-alt transition-colors ${
+                    i18n.language === lang.code ? 'text-primary font-medium' : 'text-text-muted'
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
             </div>
           )}
         </div>
