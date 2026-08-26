@@ -47,11 +47,31 @@
     "dashboard": "控制台",
     "apiKeys": "API Keys",
     "logout": "退出登录",
-    "subtitle": "LLM API 网关"
+    "subtitle": "LLM API 网关",
+    "channels": "渠道"
   },
   "theme": {
     "light": "浅色",
     "dark": "深色",
     "system": "跟随系统"
+  },
+  "channels": {
+    "title": "渠道",
+    "subtitle": "网关路由的上游供应商",
+    "add": "添加渠道",
+    "testAll": "全部测试",
+    "search": "搜索渠道或模型...",
+    "empty": "还没有渠道。添加第一个上游供应商。",
+    "edit": "编辑",
+    "delete": "删除",
+    "enable": "启用",
+    "disable": "禁用",
+    "disabled": "已禁用",
+    "priority": "优先级",
+    "stats": {
+      "total": "渠道数",
+      "active": "活跃",
+      "models": "模型数"
+    }
   }
 }

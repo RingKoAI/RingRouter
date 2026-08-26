@@ -14,8 +14,10 @@ import (
 
 	"github.com/RingKoAI/RingRouter/internal/config"
 	"github.com/RingKoAI/RingRouter/internal/database"
+	"github.com/RingKoAI/RingRouter/internal/gateway"
 	"github.com/RingKoAI/RingRouter/internal/handler"
 	"github.com/RingKoAI/RingRouter/internal/middleware"
+	"github.com/RingKoAI/RingRouter/internal/provider"
 	"github.com/RingKoAI/RingRouter/internal/router"
 )
 
@@ -45,20 +47,27 @@ func main() {
 		defer database.Close()
 	}
 
-	// Initialize handler
-	proxy := handler.NewProxy(cfg.OpenAIKey, cfg.OpenAIBaseURL)
+	// Env-configured fallback provider (used when no DB channel matches).
+	var envProvider provider.Provider
+	if cfg.OpenAIKey != "" {
+		envProvider = provider.NewOpenAI(cfg.OpenAIKey, cfg.OpenAIBaseURL)
+	}
 
-	// Initialize middleware
+	// Gateway routes across DB channels with failover.
+	gw := gateway.New()
+	proxy := handler.NewProxy(gw, envProvider)
+
+	// Auth middleware
 	auth := middleware.NewAuth(cfg.AdminKey)
 
-	// Setup router
+	// Embedded frontend
 	frontend, err := fs.Sub(frontendFS, "web/dist")
 	if err != nil {
 		log.Fatalf("[ringrouter] failed to open frontend: %v", err)
 	}
 	h := router.Setup(proxy, auth, frontend)
 
-	// Start server
+	// HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{
 		Addr:         addr,
@@ -68,7 +77,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Graceful shutdown
 	go func() {
 		log.Printf("[ringrouter] listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -76,7 +84,7 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
+	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

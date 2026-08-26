@@ -47,11 +47,31 @@
     "dashboard": "Dashboard",
     "apiKeys": "API Keys",
     "logout": "Logout",
-    "subtitle": "LLM API Gateway"
+    "subtitle": "LLM API Gateway",
+    "channels": "Channels"
   },
   "theme": {
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "channels": {
+    "title": "Channels",
+    "subtitle": "Upstream providers the gateway routes to",
+    "add": "Add Channel",
+    "testAll": "Test All",
+    "search": "Search channels or models...",
+    "empty": "No channels yet. Add your first upstream provider.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "enable": "Enable",
+    "disable": "Disable",
+    "disabled": "Disabled",
+    "priority": "Priority",
+    "stats": {
+      "total": "Channels",
+      "active": "Active",
+      "models": "Models"
+    }
   }
 }

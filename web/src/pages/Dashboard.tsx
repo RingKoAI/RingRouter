@@ -16,47 +16,55 @@ export default function Dashboard() {
   const cards = [
     {
       label: t('dashboard.systemStatus'),
-      value: status === 'ok' ? t('dashboard.online') : t('dashboard.offline'),
+      value: status === 'ok' ? t('dashboard.online') : status === 'error' ? t('dashboard.offline') : '...',
       icon: Server,
-      color: status === 'ok' ? 'text-green-500' : 'text-red-500',
+      color: status === 'ok' ? 'text-success' : status === 'error' ? 'text-destructive' : 'text-muted-foreground',
+      dot: status === 'ok' ? 'bg-success' : 'bg-destructive',
     },
     {
       label: t('dashboard.apiVersion'),
       value: 'v1',
       icon: Zap,
       color: 'text-primary',
+      dot: 'bg-primary',
     },
     {
       label: t('dashboard.uptime'),
       value: '--',
       icon: Activity,
-      color: 'text-text-muted',
+      color: 'text-muted-foreground',
+      dot: 'bg-muted-foreground',
     },
   ]
 
   return (
-    <div>
+    <div className="max-w-5xl">
       <h2 className="text-xl font-semibold mb-6">{t('dashboard.title')}</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {cards.map((card) => {
           const Icon = card.icon
           return (
-            <div key={card.label} className="bg-white dark:bg-surface rounded-xl border border-border p-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-text-muted">{card.label}</span>
-                <Icon size={20} className={card.color} />
+            <div key={card.label} className="bg-card rounded-xl border border-border p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted-foreground">{card.label}</span>
+                <Icon size={18} className={card.color} strokeWidth={2} />
               </div>
-              <p className="text-2xl font-semibold">{card.value}</p>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${card.dot}`} />
+                <p className="text-2xl font-semibold">{card.value}</p>
+              </div>
             </div>
           )
         })}
       </div>
 
-      <div className="bg-white dark:bg-surface rounded-xl border border-border p-6">
+      {/* Quick start */}
+      <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="text-sm font-medium mb-4">{t('dashboard.quickStart')}</h3>
-        <div className="bg-surface-alt dark:bg-surface-alt rounded-lg p-4 overflow-x-auto">
-          <pre className="text-xs text-text-muted">
+        <div className="bg-muted rounded-lg p-4 overflow-x-auto">
+          <pre className="text-xs text-muted-foreground font-mono leading-relaxed">
 {`# Test your RingRouter instance
 curl http://localhost:3000/v1/chat/completions \\
   -H "Authorization: Bearer <your-key>" \\

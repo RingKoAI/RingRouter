@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Channels from './pages/Channels'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="channels" element={<Channels />} />
       </Route>
 
       {/* Fallback */}
