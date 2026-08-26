@@ -1,0 +1,34 @@
+# Binaries
+RingRouter
+ringrouter
+ringrouter.exe
+*.exe
+*.test
+*.out
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build
+dist/
+target/
+
+# Web
+web/node_modules/
+web/dist/
