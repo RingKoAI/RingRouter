@@ -1,0 +1,57 @@
+{
+  "home": {
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "heroTitle": "Self-Deployed <0>LLM Gateway</0>",
+    "heroDesc": "Route requests to any AI provider through a single OpenAI-compatible API. Deploy on your own server, keep your data private.",
+    "viewGitHub": "View on GitHub",
+    "footer": "RingRouter — MIT Licensed. Built with Go + React."
+  },
+  "features": {
+    "unified": {
+      "title": "Unified API",
+      "desc": "One API endpoint for all LLM providers. Switch models without changing your code."
+    },
+    "multi": {
+      "title": "Multi-Provider",
+      "desc": "Route to OpenAI, Claude, Gemini, Azure, and more. Add new providers in seconds."
+    },
+    "keys": {
+      "title": "API Key Management",
+      "desc": "Create, revoke, and rate-limit API keys. Track usage per key and per user."
+    },
+    "self": {
+      "title": "Self-Deployed",
+      "desc": "Runs on your own infrastructure. No data leaves your network. Single binary deployment."
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signInTitle": "RingRouter",
+    "signInDesc": "Sign in with your API key",
+    "adminKey": "Admin API Key",
+    "signingIn": "Signing in...",
+    "invalidKey": "Invalid API key. Please try again.",
+    "backHome": "Back to Home"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "systemStatus": "System Status",
+    "online": "Online",
+    "offline": "Offline",
+    "apiVersion": "API Version",
+    "uptime": "Uptime",
+    "quickStart": "Quick Start"
+  },
+  "layout": {
+    "dashboard": "Dashboard",
+    "apiKeys": "API Keys",
+    "logout": "Logout",
+    "subtitle": "LLM API Gateway"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "home": {
+    "signIn": "登录",
+    "getStarted": "开始使用",
+    "heroTitle": "自部署 <0>LLM 网关</0>",
+    "heroDesc": "通过统一的 OpenAI 兼容 API 将请求路由到任意 AI 供应商。部署在自己的服务器上，数据不外泄。",
+    "viewGitHub": "GitHub 仓库",
+    "footer": "RingRouter — MIT 许可。Go + React 构建。"
+  },
+  "features": {
+    "unified": {
+      "title": "统一 API",
+      "desc": "一个接口对接所有 LLM 供应商。无需改代码即可切换模型。"
+    },
+    "multi": {
+      "title": "多供应商",
+      "desc": "支持 OpenAI、Claude、Gemini、Azure 等。秒级添加新供应商。"
+    },
+    "keys": {
+      "title": "API Key 管理",
+      "desc": "创建、吊销、限流 API Key。按 Key 和用户追踪用量。"
+    },
+    "self": {
+      "title": "自部署",
+      "desc": "运行在自己的基础设施上。数据不离开你的网络。单二进制部署。"
+    }
+  },
+  "auth": {
+    "signIn": "登录",
+    "signInTitle": "RingRouter",
+    "signInDesc": "使用 API Key 登录",
+    "adminKey": "管理员 API Key",
+    "signingIn": "登录中...",
+    "invalidKey": "API Key 无效，请重试。",
+    "backHome": "返回首页"
+  },
+  "dashboard": {
+    "title": "控制台",
+    "systemStatus": "系统状态",
+    "online": "在线",
+    "offline": "离线",
+    "apiVersion": "API 版本",
+    "uptime": "运行时间",
+    "quickStart": "快速开始"
+  },
+  "layout": {
+    "dashboard": "控制台",
+    "apiKeys": "API Keys",
+    "logout": "退出登录",
+    "subtitle": "LLM API 网关"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  }
+}

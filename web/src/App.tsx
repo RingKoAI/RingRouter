@@ -7,7 +7,7 @@ import Layout from './components/Layout'
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('ringrouter_token')
   if (!token) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/auth/login" replace />
   }
   return <>{children}</>
 }
@@ -17,7 +17,10 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
+
+      {/* Auth */}
+      <Route path="/auth/login" element={<Login />} />
+      <Route path="/auth/register" element={<Login />} />
 
       {/* Protected */}
       <Route

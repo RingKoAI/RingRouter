@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
@@ -10,9 +12,28 @@
   --color-text-muted: #6b7280;
 }
 
+/* Dark mode overrides */
+.dark {
+  --color-surface: #1f2937;
+  --color-surface-alt: #111827;
+  --color-border: #374151;
+  --color-text: #f9fafb;
+  --color-text-muted: #9ca3af;
+  --color-primary: #818cf8;
+  --color-primary-dark: #6366f1;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
   background: var(--color-surface-alt);
   color: var(--color-text);
+}
+
+/* Mobile sidebar transition */
+.sidebar-overlay {
+  transition: opacity 0.2s ease;
+}
+.sidebar-panel {
+  transition: transform 0.2s ease;
 }
