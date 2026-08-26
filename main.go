@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +18,9 @@ import (
 	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/router"
 )
+
+//go:embed web/dist
+var frontendFS embed.FS
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -47,7 +52,11 @@ func main() {
 	auth := middleware.NewAuth(cfg.AdminKey)
 
 	// Setup router
-	h := router.Setup(proxy, auth)
+	frontend, err := fs.Sub(frontendFS, "web/dist")
+	if err != nil {
+		log.Fatalf("[ringrouter] failed to open frontend: %v", err)
+	}
+	h := router.Setup(proxy, auth, frontend)
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)

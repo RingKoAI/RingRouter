@@ -31,4 +31,4 @@ target/
 
 # Web
 web/node_modules/
-web/dist/
+web/dist/data/
