@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { api } from '../lib/api'
 
 export default function Login() {
@@ -14,11 +15,11 @@ export default function Login() {
     setLoading(true)
 
     try {
-      // Validate the API key by calling /health
-      const res = await api.get('/health')
-      if (res.status === 'ok') {
+      // Validate the API key by calling /v1/models
+      const res = await api.get('/v1/models')
+      if (res.data || res.object) {
         localStorage.setItem('ringrouter_token', apiKey)
-        navigate('/')
+        navigate('/dashboard')
       }
     } catch {
       setError('Invalid API key. Please try again.')
@@ -50,9 +51,7 @@ export default function Login() {
                 autoFocus
               />
             </div>
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <button
               type="submit"
               disabled={loading || !apiKey}
@@ -61,6 +60,15 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text transition-colors"
+            >
+              <ArrowLeft size={14} />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     </div>

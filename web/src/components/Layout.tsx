@@ -12,7 +12,7 @@ export default function Layout() {
 
   const handleLogout = () => {
     localStorage.removeItem('ringrouter_token')
-    navigate('/login')
+    navigate('/')
   }
 
   return (
