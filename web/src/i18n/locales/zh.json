@@ -48,7 +48,8 @@
     "apiKeys": "API Keys",
     "logout": "退出登录",
     "subtitle": "LLM API 网关",
-    "channels": "渠道"
+    "channels": "渠道",
+    "sectionGateway": "网关"
   },
   "theme": {
     "light": "浅色",

@@ -48,7 +48,8 @@
     "apiKeys": "API Keys",
     "logout": "Logout",
     "subtitle": "LLM API Gateway",
-    "channels": "Channels"
+    "channels": "Channels",
+    "sectionGateway": "Gateway"
   },
   "theme": {
     "light": "Light",
