@@ -11,8 +11,6 @@ services:
       - "${PORT:-3000}:3000"
     environment:
       PORT: 3000
-      GIN_MODE: release
-      LOG_LEVEL: "${LOG_LEVEL:-info}"
       # 数据库（postgres）
       DB_TYPE: postgres
       DB_DSN: "postgres://${POSTGRES_USER:-ringrouter}:${POSTGRES_PASSWORD:-ringrouter}@postgres:5432/${POSTGRES_DB:-ringrouter}?sslmode=disable"

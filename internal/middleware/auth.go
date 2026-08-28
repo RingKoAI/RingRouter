@@ -74,10 +74,17 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 }
 
 func extractKey(r *http.Request) string {
-	// Authorization: Bearer <key>
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
+	// OpenAI style: Authorization: Bearer <key>
+	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 		return strings.TrimPrefix(auth, "Bearer ")
+	}
+	// Anthropic native header
+	if k := r.Header.Get("X-Api-Key"); k != "" {
+		return k
+	}
+	// Google Gemini native header
+	if k := r.Header.Get("X-Goog-Api-Key"); k != "" {
+		return k
 	}
 	return ""
 }

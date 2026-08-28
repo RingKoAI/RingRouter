@@ -18,9 +18,7 @@ import (
 
 // Config holds the fully resolved runtime configuration.
 type Config struct {
-	Port       int
-	GinMode    string
-	LogLevel   string
+	Port int
 
 	DBType string // postgres | mysql | sqlite
 	DBPath string // sqlite only
@@ -59,8 +57,6 @@ func Load() (*Config, error) {
 	redisEnabled, redisAddr, redisPassword, redisDB := redisFromEnv()
 	cfg := &Config{
 		Port:          getEnvInt("PORT", DefaultPort),
-		GinMode:       getEnv("GIN_MODE", "release"),
-		LogLevel:      getEnv("LOG_LEVEL", DefaultLogLevel),
 		DBType:        getEnv("DB_TYPE", DefaultDBType),
 		DBPath:        getEnv("DB_PATH", DefaultDBPath),
 		DBDSN:         getEnv("DB_DSN", ""),
