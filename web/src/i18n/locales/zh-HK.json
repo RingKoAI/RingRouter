@@ -103,7 +103,8 @@
     "passkeyEnroll": "還未有通行密鑰？註冊一個",
     "passkeyEnrollTitle": "註冊通行密鑰",
     "passkeyEnrollDesc": "先驗證帳號密碼確認身份，然後按裝置提示完成註冊。之後即可用通行密鑰免密登入。",
-    "passkeyEnrollAction": "驗證並註冊"
+    "passkeyEnrollAction": "驗證並註冊",
+    "getStarted": "開始使用"
   },
   "dashboard": {
     "title": "控制台",

@@ -103,7 +103,8 @@
     "passkeyEnroll": "还没有通行密钥？注册一个",
     "passkeyEnrollTitle": "注册通行密钥",
     "passkeyEnrollDesc": "先验证账号密码确认身份，然后按设备提示完成注册。之后即可用通行密钥免密登录。",
-    "passkeyEnrollAction": "验证并注册"
+    "passkeyEnrollAction": "验证并注册",
+    "getStarted": "开始使用"
   },
   "dashboard": {
     "title": "控制台",

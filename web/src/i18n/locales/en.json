@@ -103,7 +103,8 @@
     "passkeyEnroll": "No passkey yet? Register one",
     "passkeyEnrollTitle": "Register a passkey",
     "passkeyEnrollDesc": "Verify your account password first, then follow your device's prompt. After that, sign in with the passkey — no password needed.",
-    "passkeyEnrollAction": "Verify & register"
+    "passkeyEnrollAction": "Verify & register",
+    "getStarted": "Get Started"
   },
   "dashboard": {
     "title": "Dashboard",
