@@ -146,7 +146,11 @@
     "codes": "兑换码",
     "subscriptions": "订阅",
     "systemInfo": "系统信息",
-    "settings": "系统设置"
+    "settings": "系统设置",
+    "home": "首页",
+    "about": "关于",
+    "docs": "文档",
+    "console": "控制台"
   },
   "theme": {
     "light": "浅色",
@@ -452,5 +456,13 @@
     "pageInfo": "第 {{page}} 页，共 {{pages}} 页",
     "noDesc": "暂无描述。",
     "colModel": "模型"
+  },
+  "about": {
+    "desc": "RingRouter 是一个自部署的 LLM API 网关：多种协议进出、多渠道路由与故障转移、通行密钥登录、订阅计划与分组倍率，单二进制即可运行。",
+    "f1": "四种入站协议任意互转（OpenAI / Responses / Claude / Gemini），任意客户端直接接入。",
+    "f2": "多渠道路由：按模型匹配、优先级排序、失败自动转移，密钥全程加密存储。",
+    "f3": "分组与订阅：计划分配即生效，倍率计费，快照式订阅生命周期。",
+    "f4": "Passkey 通行密钥免密登录，私钥永不离开你的设备。",
+    "f5": "单二进制部署：前端嵌入，Docker Compose 一键起 PostgreSQL + Redis。"
   }
 }

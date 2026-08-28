@@ -21,6 +21,7 @@ import DataBoard from './pages/DataBoard'
 import Wallet from './pages/Wallet'
 import Playground from './pages/Playground'
 import ModelsPlaza from './pages/ModelsPlaza'
+import About from './pages/About'
 import Layout from './components/Layout'
 
 function FullScreenSpinner() {
@@ -80,6 +81,7 @@ export default function App() {
       <Route path="/setup" element={<BlockSetupWhenDone><Setup /></BlockSetupWhenDone>} />
       <Route path="/" element={<SetupGate><Home /></SetupGate>} />
       <Route path="/models" element={<SetupGate><ModelsPlaza /></SetupGate>} />
+      <Route path="/about" element={<SetupGate><About /></SetupGate>} />
       <Route path="/auth/login" element={<SetupGate><Login /></SetupGate>} />
       <Route path="/auth/register" element={<SetupGate><Register /></SetupGate>} />
       <Route path="/auth/forgot" element={<SetupGate><ForgotPassword /></SetupGate>} />

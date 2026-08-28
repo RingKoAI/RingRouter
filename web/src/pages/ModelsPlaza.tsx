@@ -5,6 +5,7 @@ import {
   Zap, Search, Copy, Check, LayoutGrid, List, ChevronLeft, ChevronRight, X, Info,
 } from 'lucide-react'
 import { api } from '../lib/api'
+import PublicNav from '../components/PublicNav'
 
 interface PlazaGroup {
   name: string; ratio: number
@@ -120,18 +121,7 @@ export default function ModelsPlaza() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Zap size={15} className="text-primary-foreground" />
-            </div>
-            {t('plaza.title')}
-          </Link>
-          <Link to="/auth/login" className="text-sm text-primary hover:underline">{t('auth.signIn')}</Link>
-        </div>
-      </header>
+      <PublicNav />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Hero */}

@@ -11,7 +11,7 @@ _✦ One gateway, every provider — multi-protocol in, multi-channel out, self-
 </div>
 
 <p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="license"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="license"></a>
   <img src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go" alt="go">
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="react">
   <img src="https://img.shields.io/badge/docker-compose-ready-2496ED?logo=docker" alt="docker">
@@ -173,4 +173,4 @@ Layout: `internal/` backend (config / crypto / database / gateway / handler / in
 
 ## License
 
-[MIT](./LICENSE)
+[AGPL-3.0](./LICENSE)

@@ -146,7 +146,11 @@
     "codes": "Redemption Codes",
     "subscriptions": "Subscriptions",
     "systemInfo": "System Info",
-    "settings": "Settings"
+    "settings": "Settings",
+    "home": "Home",
+    "about": "About",
+    "docs": "Docs",
+    "console": "Console"
   },
   "theme": {
     "light": "Light",
@@ -452,5 +456,13 @@
     "pageInfo": "Page {{page}} of {{pages}}",
     "noDesc": "No description yet.",
     "colModel": "Model"
+  },
+  "about": {
+    "desc": "RingRouter is a self-hosted LLM API gateway: multi-protocol in/out, multi-channel routing with failover, passkey auth, subscription plans with group ratios — one binary to run.",
+    "f1": "Four inbound protocols, any-to-any (OpenAI / Responses / Claude / Gemini). Any compatible client just works.",
+    "f2": "Multi-channel routing: model matching, priority ordering, automatic failover; keys sealed at rest.",
+    "f3": "Groups & subscriptions: grants apply instantly, ratio-based billing, snapshot subscription lifecycle.",
+    "f4": "Passkey passwordless sign-in — private keys never leave your device.",
+    "f5": "Single-binary deploy: embedded frontend, one-command Docker Compose with PostgreSQL + Redis."
   }
 }

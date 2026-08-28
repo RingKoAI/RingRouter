@@ -11,7 +11,7 @@ _✦ 一个网关，所有供应商 —— 多协议进、多渠道出、故障�
 </div>
 
 <p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="license"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="license"></a>
   <img src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go" alt="go">
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="react">
   <img src="https://img.shields.io/badge/docker-compose-ready-2496ED?logo=docker" alt="docker">
@@ -173,4 +173,6 @@ cd web && pnpm install && pnpm dev   # Vite :5173，代理到 :3000
 
 ## License
 
-[MIT](./LICENSE)
+[AGPL-3.0](./LICENSE)
+
+本仓库不含任何 AGPL 许可的第三方代码；采用 AGPL-3.0 是为了保持开源网关生态的传染性开源要求。
