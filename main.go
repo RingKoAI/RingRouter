@@ -111,6 +111,7 @@ func main() {
 	subH := handler.NewSubscriptionHandler()
 	tokenH := handler.NewTokenHandler()
 	logH := handler.NewLogHandler()
+	metaH := handler.NewModelMetaHandler()
 	passkeyH := handler.NewPasskeyHandler(authH)
 
 	// Seed the announcement from the env on first boot; later updates go
@@ -126,7 +127,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("[ringrouter] failed to open frontend: %v", err)
 	}
-	h := router.Setup(proxy, auth, sess, authH, adminH, groupH, setupH, settingsH, channelH, statusH, planH, subH, tokenH, logH, passkeyH, frontend)
+	h := router.Setup(proxy, auth, sess, authH, adminH, groupH, setupH, settingsH, channelH, statusH, planH, subH, tokenH, logH, metaH, passkeyH, frontend)
 
 	// HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)

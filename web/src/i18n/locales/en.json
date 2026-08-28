@@ -373,7 +373,12 @@
     "colProto": "Protocol",
     "colGroup": "Group",
     "colMapping": "Mapping",
-    "empty": "No models; create a channel first"
+    "empty": "No models; create a channel first",
+    "setPrice": "Set pricing",
+    "priceUnit": "Prices in USD / 1M tokens",
+    "fVendor": "Vendor (openai/deepseek/zhipu/moonshot…)",
+    "fDesc": "Description",
+    "fCtx": "Context window (tokens)"
   },
   "system": {
     "title": "System Info",
@@ -422,6 +427,30 @@
     "allGroups": "All groups",
     "empty": "No models available yet",
     "channels": "{{count}} channels",
-    "subtitle": "{{count}} models ready behind one API"
+    "subtitle": "{{count}} models ready behind one API",
+    "enabledCount": "{{count}} models enabled on this site",
+    "desc": "Explore available models, compare prices and capabilities, pick the right one for each task.",
+    "input": "Input",
+    "output": "Output",
+    "cache": "Cache",
+    "ctx": "Context",
+    "ctxCol": "Context",
+    "latency": "Latency",
+    "throughput": "Throughput",
+    "samples": "Samples",
+    "vendor": "Vendor",
+    "channelsCol": "Channels",
+    "groupPricing": "Effective prices per group (list × ratio)",
+    "sort": "Sort",
+    "sortName": "By name",
+    "sortPrice": "By price",
+    "viewCards": "Card view",
+    "viewTable": "Table view",
+    "detail": "Details",
+    "copy": "Copy model name",
+    "modelUnit": "models",
+    "pageInfo": "Page {{page}} of {{pages}}",
+    "noDesc": "No description yet.",
+    "colModel": "Model"
   }
 }

@@ -50,9 +50,11 @@ func (h *StatusHandler) Status(w http.ResponseWriter, r *http.Request) {
 }
 
 // Plaza aggregates the public model catalogue: every model served by an
-// active channel, the protocols offering it, and the group multipliers that
-// apply. No authentication — this is marketing/browsing surface. Channel
-// names and keys are never included.
+// active channel, enriched with catalogue metadata (vendor, description,
+// list prices, context window), per-group effective prices (list × group
+// ratio), and measured latency/throughput from recent successful requests.
+// No authentication — this is marketing/browsing surface. Channel names and
+// keys are never included.
 func (h *StatusHandler) Plaza(w http.ResponseWriter, r *http.Request) {
 	if database.DB == nil {
 		writeAPIError(w, http.StatusServiceUnavailable, "database not available")
@@ -62,24 +64,68 @@ func (h *StatusHandler) Plaza(w http.ResponseWriter, r *http.Request) {
 	database.DB.Where("status = ?", "active").Find(&channels)
 	var groups []model.Group
 	database.DB.Find(&groups)
+	var metas []model.ModelMeta
+	database.DB.Where("status = ?", "active").Find(&metas)
 
 	type plazaGroup struct {
-		Name  string  `json:"name"`
-		Ratio float64 `json:"ratio"`
+		Name        string  `json:"name"`
+		Ratio       float64 `json:"ratio"`
+		InputPrice  float64 `json:"input_price"` // $/1M tokens, effective
+		OutputPrice float64 `json:"output_price"`
+		CachePrice  float64 `json:"cache_price"`
+	}
+	type plazaStats struct {
+		AvgMs   float64 `json:"avg_ms"`  // mean request latency
+		Tps     float64 `json:"tps"`     // mean completion tokens/sec
+		Samples int64   `json:"samples"` // successful request count
 	}
 	type plazaEntry struct {
-		Model     string       `json:"model"`
-		Protocols []string     `json:"protocols"`
-		Channels  int          `json:"channels"`
-		Groups    []plazaGroup `json:"groups"`
+		Model         string       `json:"model"`
+		Vendor        string       `json:"vendor"`
+		Description   string       `json:"description"`
+		Protocols     []string     `json:"protocols"`
+		Channels      int          `json:"channels"`
+		Groups        []plazaGroup `json:"groups"`
+		ContextWindow int64        `json:"context_window"`
+		InputPrice    float64      `json:"input_price"` // list prices
+		OutputPrice   float64      `json:"output_price"`
+		CachePrice    float64      `json:"cache_price"`
+		Stats         plazaStats   `json:"stats"`
 	}
-	groupInfo := func(name string) plazaGroup {
+
+	groupRatio := func(name string) (string, float64) {
 		for _, g := range groups {
-			if g.Name == name && setting.ValidGroupRatio(g.Ratio) {
-				return plazaGroup{Name: g.Name, Ratio: g.Ratio}
+			if g.Name == name {
+				ratio := 1.0
+				if setting.ValidGroupRatio(g.Ratio) {
+					ratio = g.Ratio
+				}
+				return g.Name, ratio
 			}
 		}
-		return plazaGroup{Name: name, Ratio: 1}
+		return name, 1
+	}
+
+	// Measured performance from recent successful logs (last 7 days).
+	type statsRow struct {
+		Model string
+		AvgMs float64
+		Tps   float64
+		Count int64
+	}
+	var statsRows []statsRow
+	database.DB.Raw(`
+		SELECT model_name AS model,
+		       AVG(elapsed_ms) AS avg_ms,
+		       AVG(CASE WHEN elapsed_ms > 0 AND completion_tokens > 0
+		                THEN completion_tokens * 1000.0 / elapsed_ms END) AS tps,
+		       COUNT(*) AS count
+		FROM logs
+		WHERE status = 'success' AND created_at > ?
+		GROUP BY model_name`, time.Now().AddDate(0, 0, -7)).Scan(&statsRows)
+	stats := make(map[string]statsRow, len(statsRows))
+	for _, row := range statsRows {
+		stats[row.Model] = row
 	}
 
 	catalog := make(map[string]*plazaEntry)
@@ -92,7 +138,7 @@ func (h *StatusHandler) Plaza(w http.ResponseWriter, r *http.Request) {
 			}
 			e, ok := catalog[m]
 			if !ok {
-				e = &plazaEntry{Model: m}
+				e = &plazaEntry{Model: m, Vendor: "other"}
 				catalog[m] = e
 				seenGroups[m] = make(map[string]bool)
 			}
@@ -103,11 +149,42 @@ func (h *StatusHandler) Plaza(w http.ResponseWriter, r *http.Request) {
 			for _, g := range strings.Split(ch.Group, ",") {
 				if g = strings.TrimSpace(g); g != "" && !seenGroups[m][g] {
 					seenGroups[m][g] = true
-					e.Groups = append(e.Groups, groupInfo(g))
+					name, ratio := groupRatio(g)
+					e.Groups = append(e.Groups, plazaGroup{
+						Name: name, Ratio: ratio,
+						InputPrice:  e.InputPrice * ratio,
+						OutputPrice: e.OutputPrice * ratio,
+						CachePrice:  e.CachePrice * ratio,
+					})
 				}
 			}
 		}
 	}
+
+	// Merge catalogue metadata and recompute effective group prices.
+	for _, meta := range metas {
+		e, ok := catalog[meta.Name]
+		if !ok {
+			continue // metadata for a model no channel serves: skip
+		}
+		e.Vendor = meta.Vendor
+		e.Description = meta.Description
+		e.ContextWindow = meta.ContextWindow
+		e.InputPrice = meta.InputPrice
+		e.OutputPrice = meta.OutputPrice
+		e.CachePrice = meta.CachePrice
+		for i := range e.Groups {
+			e.Groups[i].InputPrice = meta.InputPrice * e.Groups[i].Ratio
+			e.Groups[i].OutputPrice = meta.OutputPrice * e.Groups[i].Ratio
+			e.Groups[i].CachePrice = meta.CachePrice * e.Groups[i].Ratio
+		}
+	}
+	for m, e := range catalog {
+		if row, ok := stats[m]; ok {
+			e.Stats = plazaStats{AvgMs: row.AvgMs, Tps: row.Tps, Samples: row.Count}
+		}
+	}
+
 	out := make([]plazaEntry, 0, len(catalog))
 	for _, e := range catalog {
 		out = append(out, *e)

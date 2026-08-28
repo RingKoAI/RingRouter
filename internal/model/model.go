@@ -122,6 +122,24 @@ type Passkey struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+// ModelMeta carries the public catalogue entry for one model: vendor brand,
+// description, and per-million-token prices in USD. Prices are the list
+// price; the effective price per group is list × group ratio. A missing meta
+// row simply means the model shows up without pricing.
+type ModelMeta struct {
+	ID            uint      `json:"id" gorm:"primaryKey"`
+	Name          string    `json:"name" gorm:"uniqueIndex;size:128"`
+	Vendor        string    `json:"vendor" gorm:"size:64"`  // deepseek, openai, zhipu, ...
+	Description   string    `json:"description" gorm:"size:512"`
+	InputPrice    float64   `json:"input_price"`            // $ / 1M tokens
+	OutputPrice   float64   `json:"output_price"`           // $ / 1M tokens
+	CachePrice    float64   `json:"cache_price"`            // $ / 1M cache-read tokens
+	ContextWindow int64     `json:"context_window"`         // tokens, 0 = unknown
+	Status        string    `json:"status" gorm:"size:16;default:active"` // active, hidden
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
 // Plan is a subscription plan: a named bundle of quota, routing group, and
 // duration offered to users. Prices are stored in minor units (cents) as a
 // display value only — billing integrations are out of scope for the core.

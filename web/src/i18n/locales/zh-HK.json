@@ -373,7 +373,12 @@
     "colProto": "協議",
     "colGroup": "分組",
     "colMapping": "映射",
-    "empty": "暫無模型，請先建立渠道"
+    "empty": "暫無模型，請先建立渠道",
+    "setPrice": "設置計價",
+    "priceUnit": "價格單位：美元 / 1M tokens",
+    "fVendor": "廠商 (openai/deepseek/zhipu/moonshot…)",
+    "fDesc": "描述",
+    "fCtx": "上下文窗口 (tokens)"
   },
   "system": {
     "title": "系統資訊",
@@ -422,6 +427,30 @@
     "allGroups": "全部分組",
     "empty": "暫無可用模型",
     "channels": "{{count}} 個渠道",
-    "subtitle": "共 {{count}} 個模型隨時可用，一個 API 全部搞定"
+    "subtitle": "共 {{count}} 個模型隨時可用，一個 API 全部搞定",
+    "enabledCount": "本站當前已啟用模型，總計 {{count}} 個",
+    "desc": "探索可用模型，比較價格與能力，為不同場景選擇合適的模型。",
+    "input": "輸入",
+    "output": "輸出",
+    "cache": "緩存",
+    "ctx": "上下文",
+    "ctxCol": "上下文",
+    "latency": "延遲",
+    "throughput": "吞吐",
+    "samples": "樣本數",
+    "vendor": "廠商",
+    "channelsCol": "渠道數",
+    "groupPricing": "分組實際價格（基礎價 × 分組倍率）",
+    "sort": "排序",
+    "sortName": "按名稱",
+    "sortPrice": "按價格",
+    "viewCards": "卡片視圖",
+    "viewTable": "表格視圖",
+    "detail": "詳情",
+    "copy": "複製模型名",
+    "modelUnit": "個模型",
+    "pageInfo": "第 {{page}} 頁，共 {{pages}} 頁",
+    "noDesc": "暫無描述。",
+    "colModel": "模型"
   }
 }

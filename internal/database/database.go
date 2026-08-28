@@ -125,6 +125,7 @@ func autoMigrate() error {
 		&model.Plan{},
 		&model.Subscription{},
 		&model.Passkey{},
+		&model.ModelMeta{},
 	)
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 // Setup creates and returns the HTTP handler with all routes configured.
-func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.SessionAuth, authH *handler.AuthHandler, adminH *handler.AdminHandler, groupH *handler.GroupHandler, setupH *handler.SetupHandler, settingsH *handler.SettingsHandler, channelH *handler.ChannelHandler, statusH *handler.StatusHandler, planH *handler.PlanHandler, subH *handler.SubscriptionHandler, tokenH *handler.TokenHandler, logH *handler.LogHandler, passkeyH *handler.PasskeyHandler, frontend fs.FS) http.Handler {
+func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.SessionAuth, authH *handler.AuthHandler, adminH *handler.AdminHandler, groupH *handler.GroupHandler, setupH *handler.SetupHandler, settingsH *handler.SettingsHandler, channelH *handler.ChannelHandler, statusH *handler.StatusHandler, planH *handler.PlanHandler, subH *handler.SubscriptionHandler, tokenH *handler.TokenHandler, logH *handler.LogHandler, metaH *handler.ModelMetaHandler, passkeyH *handler.PasskeyHandler, frontend fs.FS) http.Handler {
 	mux := http.NewServeMux()
 
 	// Public routes
@@ -91,6 +91,9 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	admin.HandleFunc("POST /subscriptions", subH.Grant)
 	admin.HandleFunc("DELETE /subscriptions/{id}", subH.Cancel)
 	admin.HandleFunc("GET /logs", logH.All)
+	admin.HandleFunc("GET /models", metaH.List)
+	admin.HandleFunc("PUT /models/{name}", metaH.Upsert)
+	admin.HandleFunc("DELETE /models/{name}", metaH.Delete)
 	admin.HandleFunc("GET /system", statusH.System)
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin",
 		sess.Middleware(middleware.RequireAdmin(admin))))
