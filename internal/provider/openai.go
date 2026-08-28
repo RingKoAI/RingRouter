@@ -1,80 +1,16 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
-	"time"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
 )
 
-// httpProvider is the shared HTTP plumbing for vendor adapters.
-type httpProvider struct {
-	name       string
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
-}
+// ── OpenAI Chat Completions adapter ──────────────────────────────────────────
 
-func newHTTPProvider(name, apiKey, baseURL string) httpProvider {
-	return httpProvider{
-		name:       name,
-		apiKey:     apiKey,
-		baseURL:    strings.TrimRight(baseURL, "/"),
-		httpClient: &http.Client{Timeout: 120 * time.Second},
-	}
-}
-
-// do sends a request and returns the raw response body. The caller owns
-// closing resp.Body; on non-2xx it returns an error carrying the status.
-func (p httpProvider) do(ctx context.Context, method, url string, body []byte, hdr map[string]string) (*http.Response, error) {
-	var rdr io.Reader
-	if body != nil {
-		rdr = bytes.NewReader(body)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, url, rdr)
-	if err != nil {
-		return nil, fmt.Errorf("%s: build request: %w", p.name, err)
-	}
-	if hdr != nil {
-		for k, v := range hdr {
-			req.Header.Set(k, v)
-		}
-	}
-	resp, err := p.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("%s: do request: %w", p.name, err)
-	}
-	if resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		resp.Body.Close()
-		return nil, &UpstreamError{Provider: p.name, Status: resp.StatusCode, Body: strings.TrimSpace(string(b))}
-	}
-	return resp, nil
-}
-
-// UpstreamError reports a non-2xx upstream response.
-type UpstreamError struct {
-	Provider string
-	Status   int
-	Body     string
-}
-
-func (e *UpstreamError) Error() string {
-	if e.Body == "" {
-		return fmt.Sprintf("%s upstream returned %d", e.Provider, e.Status)
-	}
-	return fmt.Sprintf("%s upstream returned %d: %s", e.Provider, e.Status, e.Body)
-}
-
-// ── OpenAI adapter ───────────────────────────────────────────────────────────
-
-// OpenAIProvider talks to any OpenAI-compatible endpoint.
+// OpenAIProvider talks to any OpenAI-compatible chat completions endpoint.
 type OpenAIProvider struct {
 	httpProvider
 }

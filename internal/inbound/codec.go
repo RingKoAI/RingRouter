@@ -17,9 +17,10 @@ import (
 type Format string
 
 const (
-	FormatOpenAI    Format = "openai"
-	FormatAnthropic Format = "anthropic"
-	FormatGoogle    Format = "google"
+	FormatOpenAI      Format = "openai"
+	FormatResponses   Format = "responses"
+	FormatAnthropic   Format = "anthropic"
+	FormatGoogle      Format = "google"
 )
 
 // DetectFormat infers the inbound format from the request path.
@@ -29,6 +30,8 @@ func DetectFormat(path string) Format {
 		return FormatAnthropic
 	case strings.Contains(path, "/v1beta/"), strings.Contains(path, "/gemini/"):
 		return FormatGoogle
+	case strings.Contains(path, "/v1/responses"):
+		return FormatResponses
 	default:
 		return FormatOpenAI
 	}
@@ -408,10 +411,137 @@ func (googleCodec) EncodeError(status int, errType, msg string) []byte {
 
 func (googleCodec) ContentType() string { return "application/json" }
 
+// ── Responses (OpenAI Responses API) codec ────────────────────────────────────
+
+// responsesRequest is the OpenAI Responses API wire format:
+// POST /v1/responses { model, input, instructions?, stream?, ... }
+// Input can be a string or an array of role/content/content_part objects.
+type responsesRequest struct {
+	Model        string          `json:"model"`
+	Input        json.RawMessage `json:"input"`
+	Instructions string          `json:"instructions,omitempty"`
+	Stream       bool            `json:"stream,omitempty"`
+	Temperature  *float64        `json:"temperature,omitempty"`
+	TopP         *float64        `json:"top_p,omitempty"`
+	MaxTokens    *int            `json:"max_output_tokens,omitempty"`
+	Stop         []string        `json:"stop,omitempty"`
+}
+
+type responsesCodec struct{}
+
+// NewResponses returns the OpenAI Responses API wire codec.
+func NewResponses() Codec { return responsesCodec{} }
+
+func (responsesCodec) Format() Format { return FormatResponses }
+
+func (responsesCodec) Decode(body []byte) (*dto.ChatRequest, error) {
+	var rr responsesRequest
+	if err := json.Unmarshal(body, &rr); err != nil {
+		return nil, fmt.Errorf("invalid responses request: %w", err)
+	}
+	if rr.Model == "" {
+		return nil, fmt.Errorf("model is required")
+	}
+	if len(rr.Input) == 0 {
+		return nil, fmt.Errorf("input is required")
+	}
+
+	req := &dto.ChatRequest{
+		Model:       rr.Model,
+		Stream:      rr.Stream,
+		Temperature: rr.Temperature,
+		TopP:        rr.TopP,
+		Stop:        rr.Stop,
+	}
+
+	if rr.MaxTokens != nil {
+		req.MaxTokens = rr.MaxTokens
+	}
+
+	// Prepend system instructions if present.
+	if rr.Instructions != "" {
+		req.Messages = append(req.Messages, dto.Message{Role: "system", Content: rr.Instructions})
+	}
+
+	// Parse input: string → single user message; array → role/content objects.
+	inputStr := ""
+	if err := json.Unmarshal(rr.Input, &inputStr); err == nil {
+		// Input is a plain string.
+		req.Messages = append(req.Messages, dto.Message{Role: "user", Content: inputStr})
+	} else {
+		// Input is an array of objects: [{role, content}, ...]
+		type inputPart struct {
+			Role    string          `json:"role"`
+			Content json.RawMessage `json:"content"`
+		}
+		var parts []inputPart
+		if err := json.Unmarshal(rr.Input, &parts); err != nil {
+			return nil, fmt.Errorf("invalid responses input format: %w", err)
+		}
+		for _, p := range parts {
+			req.Messages = append(req.Messages, dto.Message{
+				Role:    p.Role,
+				Content: extractText(p.Content),
+			})
+		}
+	}
+
+	return req, nil
+}
+
+func (responsesCodec) EncodeChat(resp *dto.ChatResponse) ([]byte, error) {
+	// Responses API output: { id, object, output: [...], usage: {...} }
+	type outputBlock struct {
+		Type    string `json:"type"`
+		Content string `json:"content,omitempty"`
+	}
+
+	type rResp struct {
+		ID      string        `json:"id"`
+		Object  string        `json:"object"`
+		Output  []outputBlock `json:"output"`
+		Usage   struct {
+			InputTokens  int `json:"input_tokens"`
+			OutputTokens int `json:"output_tokens"`
+			TotalTokens  int `json:"total_tokens"`
+		} `json:"usage"`
+	}
+
+	var out rResp
+	out.ID = resp.ID
+	out.Object = "response"
+	out.Usage.InputTokens = resp.Usage.PromptTokens
+	out.Usage.OutputTokens = resp.Usage.CompletionTokens
+	out.Usage.TotalTokens = resp.Usage.TotalTokens
+
+	text := ""
+	if len(resp.Choices) > 0 {
+		text = resp.Choices[0].Message.Content
+	}
+	if text != "" {
+		out.Output = append(out.Output, outputBlock{Type: "output_text", Content: text})
+	} else {
+		out.Output = []outputBlock{}
+	}
+
+	return json.Marshal(out)
+}
+
+func (responsesCodec) EncodeError(status int, errType, msg string) []byte {
+	b, _ := json.Marshal(dto.ErrorBody{Error: dto.ErrorDetail{
+		Message: msg,
+		Type:    errType,
+	}})
+	return b
+}
+
+func (responsesCodec) ContentType() string { return "application/json" }
+
 // ── Registry ─────────────────────────────────────────────────────────────────
 
 var codecs = map[Format]Codec{
 	FormatOpenAI:    NewOpenAI(),
+	FormatResponses: NewResponses(),
 	FormatAnthropic: NewAnthropic(),
 	FormatGoogle:    NewGoogle(),
 }

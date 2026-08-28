@@ -1,11 +1,9 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
@@ -14,14 +12,14 @@ import (
 // ── Google (Gemini) adapter ──────────────────────────────────────────────────
 
 type googleGenRequest struct {
-	Contents []googleContent `json:"contents"`
-	SystemInstruction *googleContent `json:"systemInstruction,omitempty"`
-	GenerationConfig *googleGenConfig `json:"generationConfig,omitempty"`
+	Contents          []googleContent `json:"contents"`
+	SystemInstruction *googleContent  `json:"systemInstruction,omitempty"`
+	GenerationConfig  *googleGenConfig `json:"generationConfig,omitempty"`
 }
 
 type googleContent struct {
-	Role  string        `json:"role,omitempty"`
-	Parts []googlePart  `json:"parts"`
+	Role  string      `json:"role,omitempty"`
+	Parts []googlePart `json:"parts"`
 }
 
 type googlePart struct {
@@ -29,10 +27,10 @@ type googlePart struct {
 }
 
 type googleGenConfig struct {
-	Temperature      *float64 `json:"temperature,omitempty"`
-	TopP             *float64 `json:"topP,omitempty"`
-	MaxOutputTokens  int      `json:"maxOutputTokens,omitempty"`
-	StopSequences    []string `json:"stopSequences,omitempty"`
+	Temperature     *float64 `json:"temperature,omitempty"`
+	TopP            *float64 `json:"topP,omitempty"`
+	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"`
+	StopSequences   []string `json:"stopSequences,omitempty"`
 }
 
 type googleGenResponse struct {
@@ -63,20 +61,19 @@ func (p *GoogleProvider) Name() string { return "google" }
 
 func (p *GoogleProvider) authHeaders() map[string]string {
 	return map[string]string{
-		"Content-Type": "application/json",
+		"Content-Type":   "application/json",
 		"x-goog-api-key": p.apiKey,
 	}
 }
 
 // toGoogle converts the unified request into the Gemini wire format.
-// The caller supplies the resolved Gemini model name.
-func toGoogle(req *dto.ChatRequest, geminiModel string) *googleGenRequest {
+func toGoogle(req *dto.ChatRequest) *googleGenRequest {
 	out := &googleGenRequest{}
 	if req.MaxTokens != nil || req.Temperature != nil || req.TopP != nil || len(req.Stop) > 0 {
 		out.GenerationConfig = &googleGenConfig{
-			Temperature:     req.Temperature,
-			TopP:            req.TopP,
-			StopSequences:   req.Stop,
+			Temperature:   req.Temperature,
+			TopP:          req.TopP,
+			StopSequences: req.Stop,
 		}
 		if req.MaxTokens != nil {
 			out.GenerationConfig.MaxOutputTokens = *req.MaxTokens
@@ -99,7 +96,6 @@ func toGoogle(req *dto.ChatRequest, geminiModel string) *googleGenRequest {
 			Parts: []googlePart{{Text: m.Content}},
 		})
 	}
-	_ = geminiModel // model is part of the URL for Gemini
 	return out
 }
 
@@ -147,7 +143,7 @@ func (p *GoogleProvider) generateURL(model, method string) string {
 }
 
 func (p *GoogleProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.ChatResponse, error) {
-	gr := toGoogle(req, req.Model)
+	gr := toGoogle(req)
 	body, err := json.Marshal(gr)
 	if err != nil {
 		return nil, err
@@ -165,8 +161,6 @@ func (p *GoogleProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.C
 }
 
 func (p *GoogleProvider) ChatStream(ctx context.Context, req *dto.ChatRequest) (*StreamResult, error) {
-	// Cross-format stream translation is not implemented yet: fall back to a
-	// buffered (non-stream) upstream call.
 	resp, err := p.Chat(ctx, req)
 	if err != nil {
 		return nil, err
@@ -195,20 +189,6 @@ func (p *GoogleProvider) Models(ctx context.Context) ([]dto.Model, error) {
 		out = append(out, dto.Model{ID: id, Object: "model", OwnedBy: "google"})
 	}
 	return out, nil
-}
-
-// bufferedResult serializes a unified response for clients that requested a
-// stream from a provider that cannot stream through the gateway yet.
-func bufferedResult(name string, resp *dto.ChatResponse) (*StreamResult, error) {
-	b, err := json.Marshal(resp)
-	if err != nil {
-		return nil, fmt.Errorf("%s: marshal buffered response: %w", name, err)
-	}
-	return &StreamResult{
-		Body:        io.NopCloser(bytes.NewReader(b)),
-		ContentType: "application/json",
-		Buffered:    true,
-	}, nil
 }
 
 var _ Provider = (*GoogleProvider)(nil)
