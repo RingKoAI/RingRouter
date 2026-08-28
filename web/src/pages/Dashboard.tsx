@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Copy, Check } from 'lucide-react'
 import { api } from '../lib/api'
+import { useSite } from '../contexts/SiteContext'
 import { Activity, Server, Zap } from 'lucide-react'
 
 export default function Dashboard() {
   const { t } = useTranslation()
+  const { siteName, apiBase, version } = useSite()
   const [status, setStatus] = useState<'ok' | 'error' | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     api.get('/health').then((res) => {
@@ -37,6 +41,22 @@ export default function Dashboard() {
     },
   ]
 
+  const curlCmd = `# ${t('dashboard.quickStartHint', { site: siteName })}
+curl ${apiBase}/v1/chat/completions \\
+  -H "Authorization: Bearer <your-key>" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"hello"}]}'`
+
+  const copyCurl = async () => {
+    try {
+      await navigator.clipboard.writeText(curlCmd.replace(/\\\n\s*/g, ''))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // Clipboard unavailable (insecure context); the command stays selectable.
+    }
+  }
+
   return (
     <div className="max-w-5xl">
       <h2 className="text-xl font-semibold mb-6">{t('dashboard.title')}</h2>
@@ -46,7 +66,7 @@ export default function Dashboard() {
         {cards.map((card) => {
           const Icon = card.icon
           return (
-            <div key={card.label} className="bg-card rounded-xl border border-border p-5">
+            <div key={card.label} className="bg-card rounded-2xl border border-border p-5 anim-fade-up">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-muted-foreground">{card.label}</span>
                 <Icon size={18} className={card.color} strokeWidth={2} />
@@ -61,17 +81,30 @@ export default function Dashboard() {
       </div>
 
       {/* Quick start */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <h3 className="text-sm font-medium mb-4">{t('dashboard.quickStart')}</h3>
-        <div className="bg-muted rounded-lg p-4 overflow-x-auto">
-          <pre className="text-xs text-muted-foreground font-mono leading-relaxed">
-{`# Test your RingRouter instance
-curl http://localhost:3000/v1/chat/completions \\
-  -H "Authorization: Bearer <your-key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"hello"}]}'`}
-          </pre>
+      <div className="bg-card rounded-2xl border border-border p-6 anim-fade-up anim-delay-1">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-medium">{t('dashboard.quickStart')}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('dashboard.quickStartDesc', { site: siteName })}
+            </p>
+          </div>
+          <button
+            onClick={copyCurl}
+            title={t('dashboard.copy')}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors press cursor-pointer"
+          >
+            {copied ? <Check size={15} className="text-success" strokeWidth={2.2} /> : <Copy size={15} strokeWidth={2} />}
+          </button>
         </div>
+        <div className="bg-muted rounded-xl p-4 overflow-x-auto">
+          <pre className="text-xs text-muted-foreground font-mono leading-relaxed">{curlCmd}</pre>
+        </div>
+        {version && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {siteName} · v{version}
+          </p>
+        )}
       </div>
     </div>
   )

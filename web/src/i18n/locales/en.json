@@ -2,37 +2,108 @@
   "home": {
     "signIn": "Sign In",
     "getStarted": "Get Started",
-    "heroTitle": "Self-Deployed <0>LLM Gateway</0>",
-    "heroDesc": "Route requests to any AI provider through a single OpenAI-compatible API. Deploy on your own server, keep your data private.",
+    "badge": "OpenAI · Anthropic · Gemini · Multi-protocol",
+    "heroTitle": "One gateway, <0>every provider</0>",
+    "heroDesc": "Unify OpenAI, Claude, Gemini and more behind a single OpenAI-compatible API, with format translation and failover built in. Self-hosted, your data stays private.",
     "viewGitHub": "View on GitHub",
-    "footer": "RingRouter — MIT Licensed. Built with Go + React."
-  },
-  "features": {
-    "unified": {
-      "title": "Unified API",
-      "desc": "One API endpoint for all LLM providers. Switch models without changing your code."
+    "compatibleApps": "Supported Applications",
+    "stats": {
+      "adapters": "Upstream Adapters",
+      "billing": "Model Billing",
+      "routing": "API Routes",
+      "control": "Scheduling Control"
     },
-    "multi": {
-      "title": "Multi-Provider",
-      "desc": "Route to OpenAI, Claude, Gemini, Azure, and more. Add new providers in seconds."
+    "featuresTitle": "<0>Built for developers</0>, designed for scale",
+    "features": {
+      "speed": {
+        "title": "Blazing Fast",
+        "desc": "Optimized network architecture ensuring millisecond-level response times"
+      },
+      "secure": {
+        "title": "Secure & Reliable",
+        "desc": "Enterprise-grade security with comprehensive access management"
+      },
+      "global": {
+        "title": "Global Coverage",
+        "desc": "Multi-region deployment for stable global access"
+      },
+      "dev": {
+        "title": "Developer Friendly",
+        "desc": "API routing compatible with common AI application workflows"
+      }
     },
-    "keys": {
-      "title": "API Key Management",
-      "desc": "Create, revoke, and rate-limit API keys. Track usage per key and per user."
+    "workflowLabel": "Workflow",
+    "workflowTitle": "Get started in three steps",
+    "workflow": {
+      "configure": {
+        "title": "Configure",
+        "desc": "Add API keys, set up channels and configure access permissions"
+      },
+      "connect": {
+        "title": "Connect",
+        "desc": "Access via OpenAI, Claude, Gemini and other compatible API routes"
+      },
+      "monitor": {
+        "title": "Monitor",
+        "desc": "Track usage, costs and performance through real-time analytics"
+      }
     },
-    "self": {
-      "title": "Self-Deployed",
-      "desc": "Runs on your own infrastructure. No data leaves your network. Single binary deployment."
-    }
+    "footer": "MIT Licensed. Built with Go + React.",
+    "plaza": "Models"
   },
   "auth": {
     "signIn": "Sign In",
-    "signInTitle": "RingRouter",
-    "signInDesc": "Sign in with your API key",
-    "adminKey": "Admin API Key",
+    "signInTitle": "Welcome back",
+    "signInDesc": "Sign in to the RingRouter console",
+    "tabPassword": "Password",
+    "tabCode": "Email Code",
+    "tabAdmin": "Admin Key",
+    "account": "Username or Email",
+    "accountPlaceholder": "username / you@example.com",
+    "password": "Password",
+    "email": "Email",
+    "code": "Verification Code",
+    "sendCode": "Send Code",
+    "adminKey": "Admin Key",
+    "adminKeyDesc": "Bootstrap key from the ADMIN_KEY environment variable, for initial setup login.",
     "signingIn": "Signing in...",
-    "invalidKey": "Invalid API key. Please try again.",
-    "backHome": "Back to Home"
+    "networkError": "Network error, please try again later.",
+    "backHome": "Back to Home",
+    "noAccount": "No account yet?",
+    "createAccount": "Create one",
+    "hasAccount": "Already have an account?",
+    "registerTitle": "Create Account",
+    "registerDesc": "Register a RingRouter account",
+    "username": "Username",
+    "usernameHint": "3-32 characters: letters, digits, - and _",
+    "passwordHint": "At least 8 characters",
+    "confirmPassword": "Confirm Password",
+    "passwordMismatch": "Passwords do not match",
+    "firstUserAdminHint": "The administrator promotes members from the console; everyone else stays a regular user.",
+    "registering": "Registering...",
+    "register": "Register",
+    "forgotPassword": "Forgot password?",
+    "forgotHint": "Email code recovery coming soon",
+    "forgotDesc": "Enter your registered email and we'll send a verification code to reset your password.",
+    "forgotNoEmail": "Email service not configured. Please contact the administrator to reset your password.",
+    "codeSent": "Verification code sent. Please check your inbox.",
+    "nextStep": "Next: Set new password",
+    "newPassword": "New Password",
+    "resetPassword": "Reset Password",
+    "resetting": "Resetting...",
+    "backToLogin": "Back to login",
+    "sending": "Sending...",
+    "contactAdmin": "Contact admin",
+    "contactAdminHint": "Email service not configured, contact admin to reset password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "or": "or",
+    "passkeyLogin": "Sign in with a passkey",
+    "passkeyFailed": "Passkey verification failed, please retry",
+    "passkeyEnroll": "No passkey yet? Register one",
+    "passkeyEnrollTitle": "Register a passkey",
+    "passkeyEnrollDesc": "Verify your account password first, then follow your device's prompt. After that, sign in with the passkey — no password needed.",
+    "passkeyEnrollAction": "Verify & register"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -41,7 +112,10 @@
     "offline": "Offline",
     "apiVersion": "API Version",
     "uptime": "Uptime",
-    "quickStart": "Quick Start"
+    "quickStart": "Quick Start",
+    "quickStartHint": "Test your {{site}} instance",
+    "quickStartDesc": "Point any OpenAI-compatible client at the Base URL above.",
+    "copy": "Copy"
   },
   "layout": {
     "dashboard": "Dashboard",
@@ -49,7 +123,30 @@
     "logout": "Logout",
     "subtitle": "LLM API Gateway",
     "channels": "Channels",
-    "sectionGateway": "Gateway"
+    "sectionGateway": "Gateway",
+    "sectionAdmin": "Admin",
+    "announcement": "Announcement"
+  },
+  "nav": {
+    "chat": "Chat",
+    "playground": "Playground",
+    "sectionGeneral": "General",
+    "overview": "Overview",
+    "dataBoard": "Data Board",
+    "apiKeys": "API Keys",
+    "usageLogs": "Usage Logs",
+    "taskLogs": "Task Logs",
+    "sectionPersonal": "Personal",
+    "wallet": "Wallet",
+    "profile": "Profile",
+    "sectionAdmin": "Admin",
+    "channels": "Channels",
+    "models": "Models",
+    "users": "Users",
+    "codes": "Redemption Codes",
+    "subscriptions": "Subscriptions",
+    "systemInfo": "System Info",
+    "settings": "Settings"
   },
   "theme": {
     "light": "Light",
@@ -74,5 +171,257 @@
       "active": "Active",
       "models": "Models"
     }
+  },
+  "authIntro": {
+    "headline": "One gateway, <1>every provider</1>.",
+    "sub": "RingRouter unifies OpenAI, Claude, Gemini and more behind a single OpenAI-compatible API, with format translation and failover built in.",
+    "routing": {
+      "title": "Smart Routing",
+      "desc": "Channels matched by model automatically, priority-scheduled, failover on error."
+    },
+    "formats": {
+      "title": "Any Wire Format",
+      "desc": "OpenAI / Anthropic / Gemini request formats in, any format out."
+    },
+    "privacy": {
+      "title": "Your Data, Your Server",
+      "desc": "Self-hosted, single binary, no third-party relay of your traffic."
+    },
+    "footnote": "RingRouter — Self-hosted LLM Gateway · MIT Licensed"
+  },
+  "setup": {
+    "subtitle": "Instance setup",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish setup",
+    "footnote": "All of these settings can be changed later in the console.",
+    "steps": {
+      "admin": "Admin account",
+      "smtp": "Email",
+      "mode": "Usage mode",
+      "passkey": "Passkey"
+    },
+    "admin": {
+      "title": "Create the administrator account",
+      "desc": "This account has full privileges and carries the admin badge.",
+      "invalid": "Fill in a valid username (3-32 chars), email, and a password of at least 8 characters."
+    },
+    "smtp": {
+      "title": "Configure email (optional)",
+      "desc": "Used for login codes, password resets and other transactional mail.",
+      "enable": "Enable SMTP",
+      "enableDesc": "Optional - can be configured later",
+      "host": "SMTP host",
+      "port": "Port",
+      "username": "Username",
+      "password": "Password",
+      "from": "From address",
+      "testTo": "Test recipient",
+      "test": "Send test",
+      "testOk": "Test message sent, please check the inbox.",
+      "invalid": "SMTP host, port and from address are required.",
+      "skipHint": "Skip this step when disabled"
+    },
+    "mode": {
+      "title": "Choose a usage mode",
+      "desc": "Controls billing and access policy for the instance.",
+      "external": {
+        "title": "External",
+        "desc": "Serve external users; quota and billing enabled."
+      },
+      "self": {
+        "title": "Self-use",
+        "desc": "Personal use; unpriced models pass through."
+      },
+      "demo": {
+        "title": "Demo",
+        "desc": "Public demo with quota and rate restrictions."
+      }
+    },
+    "site": {
+      "name": "Site name",
+      "nameHint": "Shown in the browser title and login page; editable later in settings"
+    },
+    "passkey": {
+      "title": "Passkey sign-in",
+      "desc": "Let users sign in passwordless with fingerprint / face / security keys",
+      "enable": "Enable passkeys",
+      "enableDesc": "Private keys never leave the device — safer than passwords",
+      "rpId": "Relying Party ID",
+      "rpIdHint": "Your site's registered domain, e.g. example.com (localhost for dev)",
+      "origins": "Origins",
+      "originsHint": "Full site origins, comma-separated, e.g. https://example.com",
+      "invalid": "Enabling passkeys requires the domain and origins",
+      "skipHint": "Can be enabled later in settings"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "subtitle": "Manage roles, groups, status and quota",
+    "refresh": "Refresh",
+    "search": "Search username / email…",
+    "empty": "No matching users",
+    "colUser": "User",
+    "colRole": "Role",
+    "colGroup": "Group",
+    "colStatus": "Status",
+    "colQuota": "Quota",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "roleAdmin": "Admin",
+    "roleUser": "User",
+    "stActive": "Active",
+    "stDisabled": "Disabled",
+    "unlimited": "Unlimited",
+    "promote": "Promote to admin",
+    "demote": "Demote to user",
+    "enable": "Enable account",
+    "disable": "Disable account",
+    "resetPwd": "Reset password",
+    "setQuota": "Set quota",
+    "delete": "Delete user",
+    "target": "Target user: {{name}}",
+    "newPwdHint": "New password (min 8 chars)",
+    "quotaHint": "Quota value, -1 for unlimited",
+    "confirmDelete": "Delete user {{name}}? All sessions and API keys will be removed.",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "pageInfo": "{{total}} users · page {{page}}/{{pages}}",
+    "errQuota": "Quota must be an integer",
+    "errNetwork": "Network error, please retry"
+  },
+  "profile": {
+    "title": "Profile",
+    "passkeySubtitle": "Manage your passkeys",
+    "addPasskey": "Add a passkey",
+    "passkeyName": "Name (e.g. MacBook Touch ID)",
+    "register": "Register",
+    "passkeyAdded": "Passkey added",
+    "passkeyCancelled": "Cancelled",
+    "passkeyFailed": "Registration failed, please retry",
+    "colName": "Name",
+    "colSynced": "Sync",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "noPasskeys": "No passkeys yet",
+    "synced": "Synced",
+    "deviceOnly": "This device",
+    "delete": "Delete",
+    "passkeyHint": "Passkeys are protected by your device's biometrics (fingerprint / face / PIN). The private key never leaves your device — safer than passwords."
+  },
+  "keys": {
+    "title": "API Keys",
+    "subtitle": "Manage keys used to call the gateway",
+    "create": "Create key",
+    "nameHint": "Key name, e.g. production",
+    "onetime": "Shown only once — copy it now",
+    "empty": "No keys yet",
+    "search": "Search keys…"
+  },
+  "logs": {
+    "title": "Usage Logs",
+    "subtitle": "Your gateway request history",
+    "modelFilter": "Filter by model",
+    "allStatus": "All statuses",
+    "success": "Success",
+    "failed": "Failed",
+    "colModel": "Model",
+    "colTokens": "Tokens",
+    "colElapsed": "Elapsed",
+    "colTime": "Time",
+    "empty": "No requests yet"
+  },
+  "settings": {
+    "title": "System Settings",
+    "subtitle": "Site, mail and security (hot-reloaded)",
+    "site": "Site",
+    "announcement": "Announcement",
+    "usageMode": "Usage mode",
+    "save": "Save settings",
+    "saved": "Saved",
+    "configured": "Configured",
+    "notConfigured": "Not configured"
+  },
+  "plans": {
+    "title": "Subscription Plans",
+    "subtitle": "Define plans; granting applies instantly",
+    "add": "New plan",
+    "grant": "Grant subscription",
+    "grants": "Grants",
+    "empty": "No plans yet",
+    "noGrants": "No grants yet",
+    "free": "Free",
+    "perpetual": "Perpetual",
+    "plan": "Plan",
+    "user": "User",
+    "expires": "Expires",
+    "fName": "Name (e.g. Pro)",
+    "fDesc": "Description (optional)",
+    "fPrice": "Price in USD (0 = free)",
+    "fQuota": "Quota (-1 unlimited)",
+    "fGroup": "Group",
+    "fDays": "Days (0 = perpetual)",
+    "selUser": "Select user…",
+    "selPlan": "Select plan…"
+  },
+  "models": {
+    "title": "Models",
+    "subtitle": "{{models}} models across {{channels}} channels",
+    "search": "Search models…",
+    "colModel": "Model",
+    "colChannel": "Channel",
+    "colProto": "Protocol",
+    "colGroup": "Group",
+    "colMapping": "Mapping",
+    "empty": "No models; create a channel first"
+  },
+  "system": {
+    "title": "System Info",
+    "subtitle": "Runtime and deployment topology",
+    "site": "Site",
+    "usageMode": "Usage mode",
+    "db": "Database",
+    "mem": "Memory",
+    "uptime": "Uptime",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "data": {
+    "title": "Data Board",
+    "subtitle": "Instance overview",
+    "users": "Users",
+    "channels": "Channels",
+    "plans": "Plans",
+    "subs": "Subscriptions",
+    "requests": "Requests",
+    "moreHint": "Request trends and model distribution charts will arrive as log data accumulates."
+  },
+  "wallet": {
+    "title": "Wallet",
+    "subtitle": "Quota balance and subscriptions",
+    "balance": "Quota balance",
+    "group": "Current group",
+    "subscriptions": "Subscriptions",
+    "noSubs": "No subscriptions yet"
+  },
+  "pg": {
+    "title": "Playground",
+    "subtitle": "Debug models with your API key",
+    "apiKey": "API key (sk-rr-…)",
+    "model": "Model, e.g. gpt-4o-mini",
+    "needKeyModel": "API key and model are required",
+    "placeholder": "Type a message; Enter to send, Shift+Enter for newline",
+    "clear": "Clear conversation",
+    "hint": "Configure a key and model to start",
+    "emptyResponse": "(empty response)"
+  },
+  "plaza": {
+    "title": "Model Plaza",
+    "heading": "Available models",
+    "search": "Search models…",
+    "allGroups": "All groups",
+    "empty": "No models available yet",
+    "channels": "{{count}} channels",
+    "subtitle": "{{count}} models ready behind one API"
   }
 }

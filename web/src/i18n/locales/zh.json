@@ -2,37 +2,108 @@
   "home": {
     "signIn": "登录",
     "getStarted": "开始使用",
-    "heroTitle": "自部署 <0>LLM 网关</0>",
-    "heroDesc": "通过统一的 OpenAI 兼容 API 将请求路由到任意 AI 供应商。部署在自己的服务器上，数据不外泄。",
+    "badge": "OpenAI · Anthropic · Gemini · 多协议支持",
+    "heroTitle": "一个网关，<0>所有供应商</0>",
+    "heroDesc": "将 OpenAI、Claude、Gemini 等供应商聚合为统一的 OpenAI 兼容 API，自带格式转换与故障转移。部署在自己的服务器上，数据不外泄。",
     "viewGitHub": "GitHub 仓库",
-    "footer": "RingRouter — MIT 许可。Go + React 构建。"
-  },
-  "features": {
-    "unified": {
-      "title": "统一 API",
-      "desc": "一个接口对接所有 LLM 供应商。无需改代码即可切换模型。"
+    "compatibleApps": "常用应用支持",
+    "stats": {
+      "adapters": "上游服务适配",
+      "billing": "模型计费支持",
+      "routing": "兼容 API 路由",
+      "control": "调度控制能力"
     },
-    "multi": {
-      "title": "多供应商",
-      "desc": "支持 OpenAI、Claude、Gemini、Azure 等。秒级添加新供应商。"
+    "featuresTitle": "为<0>开发者打造</0>，为规模而设计",
+    "features": {
+      "speed": {
+        "title": "极速",
+        "desc": "优化的网络架构，确保毫秒级响应时间"
+      },
+      "secure": {
+        "title": "安全可靠",
+        "desc": "企业级安全性，提供全面的权限管理"
+      },
+      "global": {
+        "title": "全球覆盖",
+        "desc": "多区域部署，实现稳定的全球访问"
+      },
+      "dev": {
+        "title": "开发者友好",
+        "desc": "兼容常见 AI 应用工作流的 API 路由"
+      }
     },
-    "keys": {
-      "title": "API Key 管理",
-      "desc": "创建、吊销、限流 API Key。按 Key 和用户追踪用量。"
+    "workflowLabel": "工作流程",
+    "workflowTitle": "三步快速上手",
+    "workflow": {
+      "configure": {
+        "title": "配置",
+        "desc": "添加 API 密钥，设置渠道并配置访问权限"
+      },
+      "connect": {
+        "title": "连接",
+        "desc": "通过 OpenAI、Claude、Gemini 以及其他兼容 API 路由接入"
+      },
+      "monitor": {
+        "title": "监控",
+        "desc": "通过实时分析跟踪用量、成本和性能"
+      }
     },
-    "self": {
-      "title": "自部署",
-      "desc": "运行在自己的基础设施上。数据不离开你的网络。单二进制部署。"
-    }
+    "footer": "MIT 许可。Go + React 构建。",
+    "plaza": "模型广场"
   },
   "auth": {
     "signIn": "登录",
-    "signInTitle": "RingRouter",
-    "signInDesc": "使用 API Key 登录",
-    "adminKey": "管理员 API Key",
+    "signInTitle": "欢迎回来",
+    "signInDesc": "登录 RingRouter 管理控制台",
+    "tabPassword": "密码",
+    "tabCode": "验证码",
+    "tabAdmin": "密钥",
+    "account": "用户名或邮箱",
+    "accountPlaceholder": "用户名 / you@example.com",
+    "password": "密码",
+    "email": "邮箱",
+    "code": "验证码",
+    "sendCode": "发送验证码",
+    "adminKey": "管理员密钥",
+    "adminKeyDesc": "来自环境变量 ADMIN_KEY 的引导密钥，用于系统初始化时登录。",
     "signingIn": "登录中...",
-    "invalidKey": "API Key 无效，请重试。",
-    "backHome": "返回首页"
+    "networkError": "网络错误，请稍后重试。",
+    "backHome": "返回首页",
+    "noAccount": "还没有账户？",
+    "createAccount": "创建账户",
+    "hasAccount": "已有账户？",
+    "registerTitle": "创建账户",
+    "registerDesc": "注册一个 RingRouter 账户",
+    "username": "用户名",
+    "usernameHint": "3-32 个字符，可用字母、数字、- 和 _",
+    "passwordHint": "至少 8 个字符",
+    "confirmPassword": "确认密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "firstUserAdminHint": "由管理员在控制台中为成员提权，未提权则为普通用户。",
+    "registering": "注册中...",
+    "register": "注册",
+    "forgotPassword": "忘记密码？",
+    "forgotHint": "邮箱验证码找回即将上线",
+    "forgotDesc": "输入您的注册邮箱，我们将发送验证码帮助您重置密码。",
+    "forgotNoEmail": "邮件服务未配置，请联系管理员重置密码。",
+    "codeSent": "验证码已发送，请检查邮箱。",
+    "nextStep": "下一步：设置新密码",
+    "newPassword": "新密码",
+    "resetPassword": "重置密码",
+    "resetting": "重置中...",
+    "backToLogin": "返回登录",
+    "sending": "发送中...",
+    "contactAdmin": "联系管理员重置",
+    "contactAdminHint": "邮件服务未配置，请联系管理员重置密码",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码",
+    "or": "或",
+    "passkeyLogin": "使用通行密钥登录",
+    "passkeyFailed": "通行密钥验证失败，请重试",
+    "passkeyEnroll": "还没有通行密钥？注册一个",
+    "passkeyEnrollTitle": "注册通行密钥",
+    "passkeyEnrollDesc": "先验证账号密码确认身份，然后按设备提示完成注册。之后即可用通行密钥免密登录。",
+    "passkeyEnrollAction": "验证并注册"
   },
   "dashboard": {
     "title": "控制台",
@@ -41,7 +112,10 @@
     "offline": "离线",
     "apiVersion": "API 版本",
     "uptime": "运行时间",
-    "quickStart": "快速开始"
+    "quickStart": "快速开始",
+    "quickStartHint": "测试你的 {{site}} 实例",
+    "quickStartDesc": "将 {{site}} 作为 OpenAI 兼容的 Base URL 即可使用。",
+    "copy": "复制命令"
   },
   "layout": {
     "dashboard": "控制台",
@@ -49,7 +123,30 @@
     "logout": "退出登录",
     "subtitle": "LLM API 网关",
     "channels": "渠道",
-    "sectionGateway": "网关"
+    "sectionGateway": "网关",
+    "sectionAdmin": "管理",
+    "announcement": "公告"
+  },
+  "nav": {
+    "chat": "聊天",
+    "playground": "游乐场",
+    "sectionGeneral": "常规",
+    "overview": "概览",
+    "dataBoard": "数据看板",
+    "apiKeys": "API 密钥",
+    "usageLogs": "使用日志",
+    "taskLogs": "任务日志",
+    "sectionPersonal": "个人",
+    "wallet": "钱包",
+    "profile": "个人资料",
+    "sectionAdmin": "管理员",
+    "channels": "渠道",
+    "models": "模型",
+    "users": "用户",
+    "codes": "兑换码",
+    "subscriptions": "订阅",
+    "systemInfo": "系统信息",
+    "settings": "系统设置"
   },
   "theme": {
     "light": "浅色",
@@ -74,5 +171,257 @@
       "active": "活跃",
       "models": "模型数"
     }
+  },
+  "authIntro": {
+    "headline": "一个网关，<1>所有供应商</1>。",
+    "sub": "RingRouter 将 OpenAI、Claude、Gemini 等供应商聚合为统一的 OpenAI 兼容 API，自带格式转换与故障转移。",
+    "routing": {
+      "title": "智能路由",
+      "desc": "按模型自动匹配渠道，优先级调度，失败自动切换。"
+    },
+    "formats": {
+      "title": "多格式进出",
+      "desc": "OpenAI / Anthropic / Gemini 三种线上格式自由进出。"
+    },
+    "privacy": {
+      "title": "数据自主",
+      "desc": "部署在自己的服务器，单二进制运行，数据不经过第三方。"
+    },
+    "footnote": "RingRouter — 自部署 LLM 网关 · MIT 许可"
+  },
+  "setup": {
+    "subtitle": "初始化实例",
+    "back": "上一步",
+    "next": "下一步",
+    "finish": "完成初始化",
+    "footnote": "这些设置稍后可以在管理面中修改。",
+    "steps": {
+      "admin": "管理员账户",
+      "smtp": "邮件服务",
+      "mode": "运行模式",
+      "passkey": "通行密钥"
+    },
+    "admin": {
+      "title": "创建管理员账户",
+      "desc": "该账户拥有实例的最高权限，并带有管理员标识。",
+      "invalid": "请正确填写用户名（3-32 字符）、邮箱和至少 8 位的密码。"
+    },
+    "smtp": {
+      "title": "配置邮件服务（可选）",
+      "desc": "用于发送登录验证码、密码找回等事务性邮件。",
+      "enable": "启用 SMTP",
+      "enableDesc": "可跳过，稍后在管理面配置",
+      "host": "SMTP 服务器",
+      "port": "端口",
+      "username": "用户名",
+      "password": "密码",
+      "from": "发件地址",
+      "testTo": "测试收件邮箱",
+      "test": "发送测试",
+      "testOk": "测试邮件已发送，请查收。",
+      "invalid": "请填写 SMTP 服务器、端口和发件地址。",
+      "skipHint": "不启用可跳过此步"
+    },
+    "mode": {
+      "title": "选择运行模式",
+      "desc": "决定实例的计费与访问策略。",
+      "external": {
+        "title": "对外服务",
+        "desc": "面向外部用户提供服务，启用配额与计费。"
+      },
+      "self": {
+        "title": "自用模式",
+        "desc": "个人使用，未配置价格的模型直接放行。"
+      },
+      "demo": {
+        "title": "演示模式",
+        "desc": "公开演示用途，限制额度与速率。"
+      }
+    },
+    "site": {
+      "name": "站点名称",
+      "nameHint": "显示在浏览器标题与登录页，可稍后在设置中修改"
+    },
+    "passkey": {
+      "title": "通行密钥登录",
+      "desc": "允许用户使用指纹 / 面容 / 安全密钥无密码登录",
+      "enable": "启用通行密钥",
+      "enableDesc": "私钥永不离开设备，比密码更安全",
+      "rpId": "依赖方域名 (RP ID)",
+      "rpIdHint": "站点的注册域名，如 example.com（本地开发为 localhost）",
+      "origins": "来源 (Origins)",
+      "originsHint": "完整的站点来源，多个用逗号分隔，如 https://example.com",
+      "invalid": "开启通行密钥需要填写域名与来源",
+      "skipHint": "可稍后在系统设置中开启"
+    }
+  },
+  "users": {
+    "title": "用户管理",
+    "subtitle": "管理账户角色、分组、状态与配额",
+    "refresh": "刷新",
+    "search": "搜索用户名 / 邮箱…",
+    "empty": "没有匹配的用户",
+    "colUser": "用户",
+    "colRole": "角色",
+    "colGroup": "分组",
+    "colStatus": "状态",
+    "colQuota": "配额",
+    "colCreated": "创建时间",
+    "colActions": "操作",
+    "roleAdmin": "管理员",
+    "roleUser": "用户",
+    "stActive": "正常",
+    "stDisabled": "已禁用",
+    "unlimited": "无限",
+    "promote": "提升为管理员",
+    "demote": "降为普通用户",
+    "enable": "启用账户",
+    "disable": "禁用账户",
+    "resetPwd": "重置密码",
+    "setQuota": "设置配额",
+    "delete": "删除用户",
+    "target": "目标用户：{{name}}",
+    "newPwdHint": "新密码（至少 8 位）",
+    "quotaHint": "配额数值，-1 表示无限",
+    "confirmDelete": "确定删除用户 {{name}}？其全部会话与 API 密钥将一并删除。",
+    "confirm": "确认",
+    "cancel": "取消",
+    "pageInfo": "共 {{total}} 人 · 第 {{page}}/{{pages}} 页",
+    "errQuota": "配额必须是整数",
+    "errNetwork": "网络错误，请重试"
+  },
+  "profile": {
+    "title": "个人资料",
+    "passkeySubtitle": "管理你的通行密钥（Passkey）",
+    "addPasskey": "添加通行密钥",
+    "passkeyName": "名称（如：MacBook 触控 ID）",
+    "register": "注册",
+    "passkeyAdded": "通行密钥已添加",
+    "passkeyCancelled": "已取消",
+    "passkeyFailed": "注册失败，请重试",
+    "colName": "名称",
+    "colSynced": "同步",
+    "colCreated": "创建时间",
+    "colActions": "操作",
+    "noPasskeys": "暂无通行密钥",
+    "synced": "已同步",
+    "deviceOnly": "仅本机",
+    "delete": "删除",
+    "passkeyHint": "通行密钥由设备的生物识别（指纹 / 面容 / PIN）保护，私钥永不离开设备，比密码更安全。"
+  },
+  "keys": {
+    "title": "API 密钥",
+    "subtitle": "管理用于调用网关的密钥",
+    "create": "创建密钥",
+    "nameHint": "密钥名称，如：生产环境",
+    "onetime": "密钥仅此一次显示，请立即复制保存",
+    "empty": "暂无密钥",
+    "search": "搜索密钥名称…"
+  },
+  "logs": {
+    "title": "使用日志",
+    "subtitle": "你的网关调用记录",
+    "modelFilter": "模型过滤",
+    "allStatus": "全部状态",
+    "success": "成功",
+    "failed": "失败",
+    "colModel": "模型",
+    "colTokens": "Token",
+    "colElapsed": "耗时",
+    "colTime": "时间",
+    "empty": "暂无调用记录"
+  },
+  "settings": {
+    "title": "系统设置",
+    "subtitle": "站点、邮件与安全配置（热生效）",
+    "site": "站点",
+    "announcement": "公告",
+    "usageMode": "使用模式",
+    "save": "保存设置",
+    "saved": "已保存",
+    "configured": "已配置",
+    "notConfigured": "未配置"
+  },
+  "plans": {
+    "title": "订阅计划",
+    "subtitle": "计划定义套餐，分配给用户即时生效",
+    "add": "新建计划",
+    "grant": "分配订阅",
+    "grants": "分配记录",
+    "empty": "暂无计划",
+    "noGrants": "暂无分配记录",
+    "free": "免费",
+    "perpetual": "永久",
+    "plan": "计划",
+    "user": "用户",
+    "expires": "到期",
+    "fName": "名称（如：专业版）",
+    "fDesc": "描述（可选）",
+    "fPrice": "价格（美元，0=免费）",
+    "fQuota": "配额（-1 无限）",
+    "fGroup": "分组",
+    "fDays": "周期（天，0=永久）",
+    "selUser": "选择用户…",
+    "selPlan": "选择计划…"
+  },
+  "models": {
+    "title": "模型管理",
+    "subtitle": "共 {{models}} 个模型，来自 {{channels}} 个渠道",
+    "search": "搜索模型…",
+    "colModel": "模型",
+    "colChannel": "渠道",
+    "colProto": "协议",
+    "colGroup": "分组",
+    "colMapping": "映射",
+    "empty": "暂无模型，请先创建渠道"
+  },
+  "system": {
+    "title": "系统信息",
+    "subtitle": "运行时与部署拓扑",
+    "site": "站点",
+    "usageMode": "使用模式",
+    "db": "数据库",
+    "mem": "内存占用",
+    "uptime": "运行时间",
+    "enabled": "已启用",
+    "disabled": "未启用"
+  },
+  "data": {
+    "title": "数据看板",
+    "subtitle": "实例概览",
+    "users": "用户",
+    "channels": "渠道",
+    "plans": "计划",
+    "subs": "订阅",
+    "requests": "调用量",
+    "moreHint": "请求量趋势与模型分布图表将随日志数据积累逐步开放。"
+  },
+  "wallet": {
+    "title": "钱包",
+    "subtitle": "配额余额与订阅记录",
+    "balance": "配额余额",
+    "group": "当前分组",
+    "subscriptions": "订阅记录",
+    "noSubs": "暂无订阅"
+  },
+  "pg": {
+    "title": "游乐场",
+    "subtitle": "使用你的 API 密钥直接调试模型",
+    "apiKey": "API 密钥（sk-rr-…）",
+    "model": "模型名，如 gpt-4o-mini",
+    "needKeyModel": "请先填写 API 密钥与模型名",
+    "placeholder": "输入消息，Enter 发送，Shift+Enter 换行",
+    "clear": "清空对话",
+    "hint": "配置密钥与模型后开始对话",
+    "emptyResponse": "（空响应）"
+  },
+  "plaza": {
+    "title": "模型广场",
+    "heading": "可用模型",
+    "search": "搜索模型…",
+    "allGroups": "全部分组",
+    "empty": "暂无可用模型",
+    "channels": "{{count}} 个渠道",
+    "subtitle": "共 {{count}} 个模型随时可用，一个 API 全部搞定"
   }
 }
