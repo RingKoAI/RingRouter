@@ -12,13 +12,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/RingKoAI/RingRouter/internal/cache"
 	"github.com/RingKoAI/RingRouter/internal/config"
+	"github.com/RingKoAI/RingRouter/internal/crypto"
 	"github.com/RingKoAI/RingRouter/internal/database"
 	"github.com/RingKoAI/RingRouter/internal/gateway"
 	"github.com/RingKoAI/RingRouter/internal/handler"
 	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/provider"
 	"github.com/RingKoAI/RingRouter/internal/router"
+	"github.com/RingKoAI/RingRouter/internal/service"
+	"github.com/RingKoAI/RingRouter/internal/setting"
+	"github.com/RingKoAI/RingRouter/internal/turnstile"
 )
 
 //go:embed web/dist
@@ -27,6 +32,9 @@ var frontendFS embed.FS
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("[ringrouter] starting...")
+
+	// Initialize Turnstile (reads TURNSTILE_SECRET / TURNSTILE_SITEKEY from env).
+	turnstile.Init()
 
 	// Load configuration
 	cfg, err := config.Load()
@@ -45,6 +53,10 @@ func main() {
 		log.Println("[ringrouter] running without database - admin key auth only")
 	} else {
 		defer database.Close()
+		if err := setting.LoadFromDB(); err != nil {
+			log.Printf("[ringrouter] WARNING: failed to load settings: %v", err)
+		}
+		setting.EnsureDefaultGroup()
 	}
 
 	// Env-configured fallback provider (used when no DB channel matches).
@@ -53,19 +65,68 @@ func main() {
 		envProvider = provider.NewOpenAI(cfg.OpenAIKey, cfg.OpenAIBaseURL)
 	}
 
-	// Gateway routes across DB channels with failover.
-	gw := gateway.New()
+	// Gateway routes across DB channels with failover. Redis is optional:
+	// when enabled it serves a shared channel snapshot across instances and
+	// degrades to the DB on any failure.
+	redis := cache.New(cfg.RedisEnabled, cache.Options{
+		Addr:     cfg.RedisAddr,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+	if cfg.RedisEnabled {
+		if redis.Ping(context.Background()) {
+			log.Printf("[ringrouter] redis connected: %s (db %d)", cfg.RedisAddr, cfg.RedisDB)
+		} else {
+			log.Printf("[ringrouter] WARNING: redis at %s unreachable — falling back to in-memory cache", cfg.RedisAddr)
+		}
+	}
+	defer redis.Close()
+
+	gw := gateway.New(redis)
 	proxy := handler.NewProxy(gw, envProvider)
 
 	// Auth middleware
 	auth := middleware.NewAuth(cfg.AdminKey)
+	sess := middleware.NewSessionAuth(cfg.AdminKey)
+	adminH := handler.NewAdminHandler()
+	groupH := handler.NewGroupHandler()
+
+	// Secret sealer for options stored at rest (SMTP passwords, channel keys).
+	sealer, err := crypto.NewEncryptor(cfg.JWTSecret)
+	if err != nil {
+		log.Fatalf("[ringrouter] failed to init encryptor: %v", err)
+	}
+	service.SetDecryptor(sealer.Decrypt)
+	provider.SetDecryptor(sealer.Decrypt)
+
+	mailer := service.NewMailer()
+	authH := handler.NewAuthHandler(cfg.AdminKey, mailer)
+	setupH := handler.NewSetupHandler(sealer, mailer)
+	settingsH := handler.NewSettingsHandler(sealer)
+	channelH := handler.NewChannelHandler(sealer, func() {
+		gw.InvalidateChannels(context.Background())
+	})
+	statusH := handler.NewStatusHandler(cfg.RedisEnabled)
+	planH := handler.NewPlanHandler()
+	subH := handler.NewSubscriptionHandler()
+	tokenH := handler.NewTokenHandler()
+	logH := handler.NewLogHandler()
+	passkeyH := handler.NewPasskeyHandler(authH)
+
+	// Seed the announcement from the env on first boot; later updates go
+	// through /api/admin/settings and hot-reload on the next read.
+	if cfg.Announcement != "" && setting.Get(setting.KeyAnnouncement) == "" {
+		if err := setting.Set(setting.KeyAnnouncement, cfg.Announcement); err != nil {
+			log.Printf("[ringrouter] WARNING: failed to seed announcement: %v", err)
+		}
+	}
 
 	// Embedded frontend
 	frontend, err := fs.Sub(frontendFS, "web/dist")
 	if err != nil {
 		log.Fatalf("[ringrouter] failed to open frontend: %v", err)
 	}
-	h := router.Setup(proxy, auth, frontend)
+	h := router.Setup(proxy, auth, sess, authH, adminH, groupH, setupH, settingsH, channelH, statusH, planH, subH, tokenH, logH, passkeyH, frontend)
 
 	// HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)

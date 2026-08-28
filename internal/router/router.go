@@ -10,7 +10,7 @@ import (
 )
 
 // Setup creates and returns the HTTP handler with all routes configured.
-func Setup(proxy *handler.Proxy, auth *middleware.Auth, frontend fs.FS) http.Handler {
+func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.SessionAuth, authH *handler.AuthHandler, adminH *handler.AdminHandler, groupH *handler.GroupHandler, setupH *handler.SetupHandler, settingsH *handler.SettingsHandler, channelH *handler.ChannelHandler, statusH *handler.StatusHandler, planH *handler.PlanHandler, subH *handler.SubscriptionHandler, tokenH *handler.TokenHandler, logH *handler.LogHandler, passkeyH *handler.PasskeyHandler, frontend fs.FS) http.Handler {
 	mux := http.NewServeMux()
 
 	// Public routes
@@ -21,12 +21,79 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, frontend fs.FS) http.Han
 	// OpenAI
 	api.HandleFunc("POST /chat/completions", proxy.ChatCompletion)
 	api.HandleFunc("GET /models", proxy.ListModels)
+	// OpenAI Responses API
+	api.HandleFunc("POST /responses", proxy.ChatCompletion)
 	// Anthropic
 	api.HandleFunc("POST /messages", proxy.ChatCompletion)
 	// Google Gemini (generateContent + streamGenerateContent)
 	api.HandleFunc("POST /v1beta/models/{model...}", proxy.ChatCompletion)
 
 	mux.Handle("/v1/", auth.Middleware(http.StripPrefix("/v1", api)))
+
+	// Management plane (/api/*).
+	mgmt := http.NewServeMux()
+	// Public: no session required.
+	mgmt.HandleFunc("GET /status", statusH.Status)
+	mgmt.HandleFunc("GET /plaza", statusH.Plaza)
+	mgmt.HandleFunc("GET /setup/status", setupH.Status)
+	mgmt.HandleFunc("POST /setup/test-smtp", setupH.TestSMTP)
+	mgmt.HandleFunc("POST /setup/complete", setupH.Complete)
+	mgmt.HandleFunc("POST /auth/register", authH.Register)
+	mgmt.HandleFunc("POST /auth/login", authH.Login)
+	mgmt.HandleFunc("POST /auth/admin-key", authH.AdminKey)
+	mgmt.HandleFunc("POST /auth/logout", authH.Logout)
+	mgmt.HandleFunc("POST /auth/code", authH.SendCode)
+	mgmt.HandleFunc("POST /auth/reset-password", authH.ResetPassword)
+	mgmt.HandleFunc("POST /auth/passkey/login/begin", passkeyH.LoginBegin)
+	mgmt.HandleFunc("POST /auth/passkey/login/finish", passkeyH.LoginFinish)
+	mgmt.HandleFunc("GET /announcement", authH.Announcement)
+	// Session required.
+	mgmt.Handle("GET /auth/me", sess.Middleware(http.HandlerFunc(authH.Me)))
+	mgmt.Handle("GET /subscriptions/me", sess.Middleware(http.HandlerFunc(subH.Mine)))
+	mgmt.Handle("GET /tokens", sess.Middleware(http.HandlerFunc(tokenH.List)))
+	mgmt.Handle("POST /tokens", sess.Middleware(http.HandlerFunc(tokenH.Create)))
+	mgmt.Handle("PUT /tokens/{id}", sess.Middleware(http.HandlerFunc(tokenH.Update)))
+	mgmt.Handle("DELETE /tokens/{id}", sess.Middleware(http.HandlerFunc(tokenH.Delete)))
+	mgmt.Handle("GET /logs", sess.Middleware(http.HandlerFunc(logH.Mine)))
+	mgmt.Handle("POST /auth/passkey/register/begin", sess.Middleware(http.HandlerFunc(passkeyH.RegisterBegin)))
+	mgmt.Handle("POST /auth/passkey/register/finish", sess.Middleware(http.HandlerFunc(passkeyH.RegisterFinish)))
+	mgmt.Handle("GET /auth/passkeys", sess.Middleware(http.HandlerFunc(passkeyH.List)))
+	mgmt.Handle("DELETE /auth/passkeys/{id}", sess.Middleware(http.HandlerFunc(passkeyH.Delete)))
+	mux.Handle("/api/", http.StripPrefix("/api", mgmt))
+
+	// Admin-only management plane (/api/admin/*).
+	admin := http.NewServeMux()
+	admin.HandleFunc("GET /users", adminH.ListUsers)
+	admin.HandleFunc("DELETE /users/{id}", adminH.Delete)
+	admin.HandleFunc("PUT /users/{id}/role", adminH.UpdateRole)
+	admin.HandleFunc("PUT /users/{id}/status", adminH.UpdateStatus)
+	admin.HandleFunc("PUT /users/{id}/group", adminH.UpdateGroup)
+	admin.HandleFunc("PUT /users/{id}/quota", adminH.UpdateQuota)
+	admin.HandleFunc("PUT /users/{id}/password", adminH.ResetPassword)
+	admin.HandleFunc("GET /settings", settingsH.Get)
+	admin.HandleFunc("PUT /settings", settingsH.Update)
+	admin.HandleFunc("GET /groups", groupH.List)
+	admin.HandleFunc("POST /groups", groupH.Create)
+	admin.HandleFunc("GET /groups/{id}", groupH.Read)
+	admin.HandleFunc("PUT /groups/{id}", groupH.Update)
+	admin.HandleFunc("DELETE /groups/{id}", groupH.Delete)
+	admin.HandleFunc("GET /channels", channelH.List)
+	admin.HandleFunc("POST /channels", channelH.Create)
+	admin.HandleFunc("GET /channels/groups", channelH.Groups)
+	admin.HandleFunc("GET /channels/{id}", channelH.Read)
+	admin.HandleFunc("PUT /channels/{id}", channelH.Update)
+	admin.HandleFunc("DELETE /channels/{id}", channelH.Delete)
+	admin.HandleFunc("GET /plans", planH.List)
+	admin.HandleFunc("POST /plans", planH.Create)
+	admin.HandleFunc("PUT /plans/{id}", planH.Update)
+	admin.HandleFunc("DELETE /plans/{id}", planH.Delete)
+	admin.HandleFunc("GET /subscriptions", subH.List)
+	admin.HandleFunc("POST /subscriptions", subH.Grant)
+	admin.HandleFunc("DELETE /subscriptions/{id}", subH.Cancel)
+	admin.HandleFunc("GET /logs", logH.All)
+	admin.HandleFunc("GET /system", statusH.System)
+	mux.Handle("/api/admin/", http.StripPrefix("/api/admin",
+		sess.Middleware(middleware.RequireAdmin(admin))))
 
 	// Frontend static files
 	fileServer := http.FileServer(http.FS(frontend))

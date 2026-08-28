@@ -1,0 +1,77 @@
+name: ringrouter
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ringrouter:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      GIN_MODE: release
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      # 数据库（postgres）
+      DB_TYPE: postgres
+      DB_DSN: "postgres://${POSTGRES_USER:-ringrouter}:${POSTGRES_PASSWORD:-ringrouter}@postgres:5432/${POSTGRES_DB:-ringrouter}?sslmode=disable"
+      # Redis（可选共享缓存；不设 REDIS_CONN_STRING 即禁用，one-api 语义）
+      REDIS_CONN_STRING: "${REDIS_CONN_STRING:-redis://redis:6379}"
+      # 认证
+      ADMIN_KEY: "${ADMIN_KEY:-ringrouter-admin-key}"
+      JWT_SECRET: "${JWT_SECRET:-change-me}"
+      # Turnstile（可选）
+      TURNSTILE_SITEKEY: "${TURNSTILE_SITEKEY:-}"
+      TURNSTILE_SECRET: "${TURNSTILE_SECRET:-}"
+      ANNOUNCEMENT: "${ANNOUNCEMENT:-}"
+      TZ: "${TZ:-Asia/Shanghai}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-ringrouter}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-ringrouter}"
+      POSTGRES_DB: "${POSTGRES_DB:-ringrouter}"
+      TZ: "${TZ:-Asia/Shanghai}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ringrouter} -d ${POSTGRES_DB:-ringrouter}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    environment:
+      TZ: "${TZ:-Asia/Shanghai}"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
+  redisdata:
