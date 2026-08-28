@@ -90,6 +90,11 @@ func GetUser(ctx context.Context) *model.User {
 	return nil
 }
 
+// WithUser attaches a user to a context (used by tests and internal calls).
+func WithUser(ctx context.Context, u *model.User) context.Context {
+	return context.WithValue(ctx, ctxKeyUser, u)
+}
+
 // GetToken extracts the token from context.
 func GetToken(ctx context.Context) *model.Token {
 	if t, ok := ctx.Value(ctxKeyToken).(*model.Token); ok {
