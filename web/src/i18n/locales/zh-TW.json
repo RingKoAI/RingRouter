@@ -293,7 +293,10 @@
     "cancel": "取消",
     "pageInfo": "共 {{total}} 人 · 第 {{page}}/{{pages}} 頁",
     "errQuota": "配額必須是整數",
-    "errNetwork": "網路錯誤，請重試"
+    "errNetwork": "網路錯誤，請重試",
+    "deleted": "使用者已刪除",
+    "pwdReset": "密碼已重設",
+    "updated": "已更新"
   },
   "profile": {
     "title": "個人資料",
@@ -321,7 +324,9 @@
     "nameHint": "金鑰名稱，如：正式環境",
     "onetime": "金鑰僅此一次顯示，請立即複製保存",
     "empty": "尚無金鑰",
-    "search": "搜尋金鑰名稱…"
+    "search": "搜尋金鑰名稱…",
+    "created": "金鑰已建立",
+    "emptyHint": "建立金鑰後即可用 OpenAI 相容用戶端呼叫閘道"
   },
   "logs": {
     "title": "使用日誌",

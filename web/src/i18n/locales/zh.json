@@ -293,7 +293,10 @@
     "cancel": "取消",
     "pageInfo": "共 {{total}} 人 · 第 {{page}}/{{pages}} 页",
     "errQuota": "配额必须是整数",
-    "errNetwork": "网络错误，请重试"
+    "errNetwork": "网络错误，请重试",
+    "deleted": "用户已删除",
+    "pwdReset": "密码已重置",
+    "updated": "已更新"
   },
   "profile": {
     "title": "个人资料",
@@ -321,7 +324,9 @@
     "nameHint": "密钥名称，如：生产环境",
     "onetime": "密钥仅此一次显示，请立即复制保存",
     "empty": "暂无密钥",
-    "search": "搜索密钥名称…"
+    "search": "搜索密钥名称…",
+    "created": "密钥已创建",
+    "emptyHint": "创建一个密钥，即可用 OpenAI 兼容客户端调用网关"
   },
   "logs": {
     "title": "使用日志",

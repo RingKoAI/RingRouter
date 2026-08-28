@@ -293,7 +293,10 @@
     "cancel": "Cancel",
     "pageInfo": "{{total}} users · page {{page}}/{{pages}}",
     "errQuota": "Quota must be an integer",
-    "errNetwork": "Network error, please retry"
+    "errNetwork": "Network error, please retry",
+    "deleted": "User deleted",
+    "pwdReset": "Password reset",
+    "updated": "Updated"
   },
   "profile": {
     "title": "Profile",
@@ -321,7 +324,9 @@
     "nameHint": "Key name, e.g. production",
     "onetime": "Shown only once — copy it now",
     "empty": "No keys yet",
-    "search": "Search keys…"
+    "search": "Search keys…",
+    "created": "Key created",
+    "emptyHint": "Create a key and call the gateway from any OpenAI-compatible client"
   },
   "logs": {
     "title": "Usage Logs",

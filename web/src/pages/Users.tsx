@@ -4,7 +4,9 @@ import {
   Users as UsersIcon, Search, ShieldCheck, Shield, Power, Trash2,
   KeyRound, Coins, RefreshCw, ChevronLeft, ChevronRight, X, Check,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { api, APIError } from '../lib/api'
+import { TableSkeleton, EmptyState, PageHeader } from '../components/ui/primitives'
 
 interface User {
   id: number
@@ -70,7 +72,7 @@ export default function Users() {
   const act = async (user: User, fn: () => Promise<unknown>) => {
     setBusyId(user.id)
     try { await fn(); await load(query, page.page) } catch (e) {
-      if (e instanceof APIError) alert(e.message)
+      if (e instanceof APIError) toast.error(e.message)
     } finally { setBusyId(0) }
   }
 
@@ -95,6 +97,7 @@ export default function Users() {
         await api.delete(`/api/admin/users/${id}`)
       }
       setDialog({ kind: 'none' })
+      toast.success(dialog.kind === 'delete' ? t('users.deleted') : dialog.kind === 'password' ? t('users.pwdReset') : t('users.updated'))
       await load(query, page.page)
     } catch (e) {
       setDialogError(e instanceof APIError ? e.message : t('users.errNetwork'))
@@ -107,12 +110,7 @@ export default function Users() {
 
   return (
     <div className="max-w-6xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div>
-          <h2 className="text-xl font-semibold">{t('users.title')}</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">{t('users.subtitle')}</p>
-        </div>
+      <PageHeader title={t('users.title')} subtitle={t('users.subtitle')} actions={
         <button
           onClick={() => load(query, page.page)}
           className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer"
@@ -120,7 +118,7 @@ export default function Users() {
           <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">{t('users.refresh')}</span>
         </button>
-      </div>
+      } />
 
       {/* Search */}
       <div className="relative mb-4">
@@ -151,11 +149,13 @@ export default function Users() {
               </tr>
             </thead>
             <tbody>
-              {loading && users.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">…</td></tr>
-              ) : users.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{t('users.empty')}</td></tr>
-              ) : users.map((u) => (
+              {users.length === 0 && (
+                <tr><td colSpan={8} className="p-0">
+                  {loading ? <div className="p-4"><TableSkeleton rows={6} cols={8} /></div>
+                  : <EmptyState icon={UsersIcon} title={t('users.empty')} />}
+                </td></tr>
+              )}
+              {users.map((u) => (
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 text-muted-foreground">{u.id}</td>
                   <td className="px-4 py-3">

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { KeyRound, Plus, Trash2, Power, RefreshCw, Copy, Check, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { api, APIError } from '../lib/api'
+import { TableSkeleton, EmptyState } from '../components/ui/primitives'
 
 interface Token {
   id: number
@@ -46,6 +48,7 @@ export default function Keys() {
     setError(''); setCreating(true); setNewKey('')
     try {
       const d = await api.post<{ token: { key: string } }>('/api/tokens', { name: name.trim() })
+      toast.success(t('keys.created'))
       setNewKey(d.token.key)
       setName('')
       await load(query)
@@ -125,11 +128,13 @@ export default function Keys() {
             </tr>
           </thead>
           <tbody>
-            {loading && tokens.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">…</td></tr>
-            ) : tokens.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('keys.empty')}</td></tr>
-            ) : tokens.map((tok) => (
+            {tokens.length === 0 && (
+              <tr><td colSpan={5} className="p-0">
+                {loading ? <div className="p-4"><TableSkeleton rows={4} cols={5} /></div>
+                : <EmptyState icon={KeyRound} title={t('keys.empty')} hint={t('keys.emptyHint')} />}
+              </td></tr>
+            )}
+            {tokens.map((tok) => (
               <tr key={tok.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3 font-medium flex items-center gap-2"><KeyRound size={14} className="text-muted-foreground" />{tok.name}</td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{tok.key_masked}</td>

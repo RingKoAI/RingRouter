@@ -248,7 +248,7 @@ export default function Layout() {
 
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6 max-w-6xl">
-            <Outlet />
+            <div key={location.pathname} className="flex-1 anim-fade-up"><Outlet /></div>
           </div>
         </main>
       </div>

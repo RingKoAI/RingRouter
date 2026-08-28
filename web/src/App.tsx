@@ -23,6 +23,7 @@ import Playground from './pages/Playground'
 import ModelsPlaza from './pages/ModelsPlaza'
 import About from './pages/About'
 import Layout from './components/Layout'
+import Toaster from './components/Toaster'
 
 function FullScreenSpinner() {
   return (
@@ -77,6 +78,8 @@ function Placeholder({ title }: { title: string }) {
 
 export default function App() {
   return (
+    <>
+    <Toaster />
     <Routes>
       <Route path="/setup" element={<BlockSetupWhenDone><Setup /></BlockSetupWhenDone>} />
       <Route path="/" element={<SetupGate><Home /></SetupGate>} />
@@ -112,5 +115,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }

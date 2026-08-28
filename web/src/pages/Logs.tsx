@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { RefreshCw, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { api } from '../lib/api'
+import { TableSkeleton, EmptyState } from '../components/ui/primitives'
 
 interface LogEntry {
   id: number
