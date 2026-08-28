@@ -18,6 +18,17 @@ import (
 // DB is the global database instance.
 var DB *gorm.DB
 
+// quoteIdentifier quotes a SQL identifier for the active dialect: MySQL uses
+// backticks, PostgreSQL/SQLite use double quotes. Needed for reserved-word
+// columns (e.g. `group`) in raw statements. Returns the input unchanged when
+// no database is connected (tests that bypass Connect).
+var quoteIdentifier = func(name string) string { return name }
+
+// QuoteIdentifier quotes a column/table name for the active dialect.
+func QuoteIdentifier(name string) string {
+	return quoteIdentifier(name)
+}
+
 // Config holds database connection configuration.
 type Config struct {
 	Type string // sqlite, mysql, postgres
@@ -79,9 +90,22 @@ func Connect(cfg Config) error {
 
 	DB = db
 
+	// Wire dialect-aware identifier quoting for raw statements.
+	switch db.Dialector.Name() {
+	case "mysql":
+		quoteIdentifier = func(name string) string { return "`" + name + "`" }
+	default:
+		quoteIdentifier = func(name string) string { return `"` + name + `"` }
+	}
+
 	// Auto-migrate
 	if err := autoMigrate(); err != nil {
 		return fmt.Errorf("auto-migrate: %w", err)
+	}
+
+	// Drop sessions that expired while the server was down.
+	if err := DB.Where("expires_at < ?", time.Now()).Delete(&model.Session{}).Error; err != nil {
+		log.Printf("[ringrouter] WARNING: session cleanup failed: %v", err)
 	}
 
 	log.Printf("[ringrouter] database connected: %s", cfg.Type)
@@ -94,6 +118,13 @@ func autoMigrate() error {
 		&model.Token{},
 		&model.Channel{},
 		&model.Log{},
+		&model.Session{},
+		&model.Option{},
+		&model.Group{},
+		&model.Code{},
+		&model.Plan{},
+		&model.Subscription{},
+		&model.Passkey{},
 	)
 }
 
