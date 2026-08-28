@@ -80,6 +80,36 @@ func SessionDigest(token string) string {
 	return hex.EncodeToString(h[:])
 }
 
+// OptionalSession attaches the user when a valid session cookie is present
+// but lets anonymous requests through. Used by endpoints whose visibility
+// is runtime-configurable (e.g. the model plaza).
+func (s *SessionAuth) OptionalSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c, err := r.Cookie(SessionCookieName); err == nil && c.Value != "" && database.DB != nil {
+			var sess model.Session
+			if err := database.DB.Where("id = ?", SessionDigest(c.Value)).First(&sess).Error; err == nil {
+				if time.Now().After(sess.ExpiresAt) {
+					database.DB.Delete(&sess)
+				} else if sess.UserID == 0 {
+					ctx := context.WithValue(r.Context(), ctxKeyUser, &model.User{
+						ID: 0, Username: "admin", Role: "admin", Quota: -1, Status: "active",
+					})
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				} else {
+					var user model.User
+					if err := database.DB.First(&user, sess.UserID).Error; err == nil && user.Status == "active" {
+						ctx := context.WithValue(r.Context(), ctxKeyUser, &user)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // RequireAdmin rejects non-admin users. Must run after SessionAuth.
 func RequireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

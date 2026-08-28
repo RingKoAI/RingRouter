@@ -34,7 +34,7 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	mgmt := http.NewServeMux()
 	// Public: no session required.
 	mgmt.HandleFunc("GET /status", statusH.Status)
-	mgmt.HandleFunc("GET /plaza", statusH.Plaza)
+	mgmt.Handle("GET /plaza", sess.OptionalSession(http.HandlerFunc(statusH.Plaza)))
 	mgmt.HandleFunc("GET /setup/status", setupH.Status)
 	mgmt.HandleFunc("POST /setup/test-smtp", setupH.TestSMTP)
 	mgmt.HandleFunc("POST /setup/complete", setupH.Complete)

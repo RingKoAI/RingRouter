@@ -5,6 +5,7 @@ import {
   Zap, Search, Copy, Check, LayoutGrid, List, ChevronLeft, ChevronRight, X, Info,
 } from 'lucide-react'
 import { api } from '../lib/api'
+import { useSite } from '../contexts/SiteContext'
 import PublicNav from '../components/PublicNav'
 
 interface PlazaGroup {
@@ -45,8 +46,10 @@ const ctxLabel = (n: number): string =>
 
 export default function ModelsPlaza() {
   const { t } = useTranslation()
+  const { plazaPublic } = useSite()
   const [models, setModels] = useState<PlazaModel[]>([])
   const [loading, setLoading] = useState(true)
+  const [locked, setLocked] = useState(false)
   const [q, setQ] = useState('')
   const [group, setGroup] = useState('')
   const [sort, setSort] = useState<'name' | 'price'>('name')
@@ -58,7 +61,7 @@ export default function ModelsPlaza() {
   useEffect(() => {
     api.get<{ models: PlazaModel[] }>('/api/plaza')
       .then((d) => setModels(d.models ?? []))
-      .catch(() => {})
+      .catch((e) => { if (e instanceof Error && e.message.includes('sign in')) setLocked(true) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -172,7 +175,15 @@ export default function ModelsPlaza() {
           <b className="text-foreground">{filtered.length}</b> {t('plaza.modelUnit')}
         </p>
 
-        {loading ? (
+        {locked ? (
+          <div className="py-20 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center"><Lock size={22} className="text-muted-foreground" /></div>
+            <p className="text-sm text-muted-foreground">{t('plaza.locked')}</p>
+            <Link to="/auth/login" className="inline-flex items-center gap-1.5 min-h-[42px] px-5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-dark transition-colors cursor-pointer">
+              {t('auth.signIn')}
+            </Link>
+          </div>
+        ) : loading ? (
           <div className="py-20 text-center text-muted-foreground text-sm">…</div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-muted-foreground text-sm">{t('plaza.empty')}</div>

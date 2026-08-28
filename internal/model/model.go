@@ -13,7 +13,8 @@ type User struct {
 	Password    string    `json:"-" gorm:"size:256"`                          // bcrypt hash, empty for externally provisioned
 	Role        string    `json:"role" gorm:"size:16;default:user"`           // admin, user
 	Group       string    `json:"group" gorm:"size:64;default:default;index"` // routing group
-	Quota       int64     `json:"quota" gorm:"default:0"`                     // remaining tokens
+	Quota       int64     `json:"quota" gorm:"default:0"`                     // remaining points, -1 = unlimited
+	UsedQuota   int64     `json:"used_quota" gorm:"default:0"`                // lifetime consumption in points
 	Status      string    `json:"status" gorm:"size:16;default:active"`       // active, disabled
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`

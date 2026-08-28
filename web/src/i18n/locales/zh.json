@@ -345,7 +345,9 @@
     "save": "保存设置",
     "saved": "已保存",
     "configured": "已配置",
-    "notConfigured": "未配置"
+    "notConfigured": "未配置",
+    "plazaPublic": "模型广场公开",
+    "plazaPublicDesc": "关闭后仅登录用户可浏览 /models"
   },
   "plans": {
     "title": "订阅计划",
@@ -456,7 +458,8 @@
     "modelUnit": "个模型",
     "pageInfo": "第 {{page}} 页，共 {{pages}} 页",
     "noDesc": "暂无描述。",
-    "colModel": "模型"
+    "colModel": "模型",
+    "locked": "管理员已将模型广场设为仅登录可见"
   },
   "about": {
     "desc": "RingRouter 是一个自部署的 LLM API 网关：多种协议进出、多渠道路由与故障转移、通行密钥登录、订阅计划与分组倍率，单二进制即可运行。",

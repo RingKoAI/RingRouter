@@ -74,6 +74,11 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if !QuotaAvailable(middleware.GetUser(r.Context()), middleware.GetToken(r.Context())) {
+		p.writeErr(w, codec, http.StatusTooManyRequests, "insufficient_quota", "account or API key quota exhausted")
+		return
+	}
+
 	if req.Stream {
 		p.handleStream(w, r, codec, req)
 		return
@@ -118,7 +123,9 @@ func (p *Proxy) routeChat(r *http.Request, req *dto.ChatRequest) (*dto.ChatRespo
 	return nil, nil, err
 }
 
-// recordUsage writes a success log entry with token counts (async).
+// recordUsage bills the request and writes a success log entry (async).
+// Cost is computed from token usage × model price × group ratio and deducted
+// from both the token and the user (unlimited accounts skip deduction).
 func (p *Proxy) recordUsage(r *http.Request, modelName string, ch *model.Channel, resp *dto.ChatResponse, elapsed time.Duration) {
 	var channelID uint
 	if ch != nil {
@@ -129,7 +136,11 @@ func (p *Proxy) recordUsage(r *http.Request, modelName string, ch *model.Channel
 		prompt = resp.Usage.PromptTokens
 		completion = resp.Usage.CompletionTokens
 	}
-	p.recordLogFull(r, modelName, channelID, prompt, completion, "success", "", elapsed)
+	cost := ComputeCostQuota(modelName, prompt, completion, p.routeGroup(r))
+	if cost > 0 {
+		DeductQuota(middleware.GetUser(r.Context()), middleware.GetToken(r.Context()), cost, p.routeGroup(r))
+	}
+	p.recordLogFull(r, modelName, channelID, prompt, completion, "success", "", elapsed, cost)
 }
 
 // recordLog writes a failure log entry (async).
@@ -138,12 +149,12 @@ func (p *Proxy) recordLog(r *http.Request, modelName string, ch *model.Channel, 
 	if ch != nil {
 		channelID = ch.ID
 	}
-	p.recordLogFull(r, modelName, channelID, 0, 0, status, errMsg, elapsed)
+	p.recordLogFull(r, modelName, channelID, 0, 0, status, errMsg, elapsed, 0)
 }
 
 // recordLogFull persists a request log asynchronously; a logging failure must
 // never fail the proxy response.
-func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint, prompt, completion int, status, errMsg string, elapsed time.Duration) {
+func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint, prompt, completion int, status, errMsg string, elapsed time.Duration, cost int64) {
 	if database.DB == nil {
 		return
 	}
@@ -154,6 +165,7 @@ func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint,
 		ChannelID:    channelID,
 		PromptTokens: prompt,
 		CompTokens:   completion,
+		Quota:        cost,
 		Status:       status,
 		ErrorMsg:     truncate(errMsg, 512),
 		IP:           extractIP(r),
@@ -173,6 +185,19 @@ func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint,
 	}()
 }
 
+// billStream extracts usage from a forwarded OpenAI SSE stream and bills it.
+func (p *Proxy) billStream(r *http.Request, modelName string, ch *model.Channel, sniff []byte, start time.Time) {
+	if u := accumulateOpenAISSE(sniff); u != nil {
+		p.recordUsage(r, modelName, ch, u, time.Since(start))
+		return
+	}
+	var chID uint
+	if ch != nil {
+		chID = ch.ID
+	}
+	p.recordLogFull(r, modelName, chID, 0, 0, "success", "", time.Since(start), 0)
+}
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
@@ -186,7 +211,12 @@ func truncate(s string, n int) string {
 // upstream SSE untouched. Cross-format streams are consumed fully server-side
 // and re-emitted as a single data frame in the inbound format.
 func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbound.Codec, req *dto.ChatRequest) {
-	res, _, err := p.gw.ChatStream(r.Context(), req, p.routeGroup(r))
+	if !QuotaAvailable(middleware.GetUser(r.Context()), middleware.GetToken(r.Context())) {
+		p.writeErr(w, codec, http.StatusTooManyRequests, "insufficient_quota", "account or API key quota exhausted")
+		return
+	}
+	start := time.Now()
+	res, ch, err := p.gw.ChatStream(r.Context(), req, p.routeGroup(r))
 	if err != nil && p.envOpenAI != nil {
 		if res2, err2 := p.envOpenAI.ChatStream(r.Context(), req); err2 == nil {
 			res, err = res2, nil
@@ -196,6 +226,11 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 		if err == nil {
 			err = fmt.Errorf("no stream result")
 		}
+		var chID uint
+		if ch != nil {
+			chID = ch.ID
+		}
+		p.recordLogFull(r, req.Model, chID, 0, 0, "failed", err.Error(), time.Since(start), 0)
 		p.writeErr(w, codec, http.StatusBadGateway, "upstream_error", err.Error())
 		return
 	}
@@ -215,15 +250,22 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 		w.WriteHeader(http.StatusOK)
 		flusher.Flush()
 		buf := make([]byte, 32*1024)
+		var sniff []byte
 		for {
 			n, rerr := res.Body.Read(buf)
 			if n > 0 {
+				sniff = append(sniff, buf[:n]...)
+				if len(sniff) > maxBodyBytes {
+					sniff = sniff[len(sniff)-maxBodyBytes:] // keep the tail (usage rides at the end)
+				}
 				if _, werr := w.Write(buf[:n]); werr != nil {
+					p.billStream(r, req.Model, ch, sniff, start)
 					return
 				}
 				flusher.Flush()
 			}
 			if rerr != nil {
+				p.billStream(r, req.Model, ch, sniff, start)
 				return
 			}
 		}
@@ -248,6 +290,7 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 	}
 	unified.Model = req.Model
 	unified.Created = time.Now().Unix()
+	p.recordUsage(r, req.Model, ch, unified, time.Since(start))
 
 	out, err := codec.EncodeChat(unified)
 	if err != nil {

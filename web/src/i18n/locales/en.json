@@ -345,7 +345,9 @@
     "save": "Save settings",
     "saved": "Saved",
     "configured": "Configured",
-    "notConfigured": "Not configured"
+    "notConfigured": "Not configured",
+    "plazaPublic": "Public model plaza",
+    "plazaPublicDesc": "Turn off to require sign-in at /models"
   },
   "plans": {
     "title": "Subscription Plans",
@@ -456,7 +458,8 @@
     "modelUnit": "models",
     "pageInfo": "Page {{page}} of {{pages}}",
     "noDesc": "No description yet.",
-    "colModel": "Model"
+    "colModel": "Model",
+    "locked": "The administrator has restricted the model plaza to signed-in users"
   },
   "about": {
     "desc": "RingRouter is a self-hosted LLM API gateway: multi-protocol in/out, multi-channel routing with failover, passkey auth, subscription plans with group ratios — one binary to run.",

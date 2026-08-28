@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RingKoAI/RingRouter/internal/database"
+	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/model"
 	"github.com/RingKoAI/RingRouter/internal/setting"
 	"github.com/RingKoAI/RingRouter/internal/turnstile"
@@ -46,6 +47,7 @@ func (h *StatusHandler) Status(w http.ResponseWriter, r *http.Request) {
 		"passkey_enabled":   pk.Enabled,
 		"turnstile_enabled": turnstile.Enabled(),
 		"turnstile_sitekey": turnstile.Sitekey(),
+		"plaza_public":     setting.PlazaPublic(),
 	})
 }
 
@@ -58,6 +60,11 @@ func (h *StatusHandler) Status(w http.ResponseWriter, r *http.Request) {
 func (h *StatusHandler) Plaza(w http.ResponseWriter, r *http.Request) {
 	if database.DB == nil {
 		writeAPIError(w, http.StatusServiceUnavailable, "database not available")
+		return
+	}
+	// Operator may restrict the plaza to signed-in users.
+	if !setting.PlazaPublic() && middleware.GetUser(r.Context()) == nil {
+		writeAPIError(w, http.StatusUnauthorized, "sign in to browse the model plaza")
 		return
 	}
 	var channels []model.Channel

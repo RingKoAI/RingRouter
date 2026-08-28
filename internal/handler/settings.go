@@ -42,6 +42,7 @@ type settingsPatch struct {
 	UsageMode    *string         `json:"usage_mode,omitempty"`
 	SMTP         *smtpPayload    `json:"smtp,omitempty"`    // nil/omitted = leave SMTP alone
 	Passkey      *passkeyPayload `json:"passkey,omitempty"` // nil/omitted = leave passkey alone
+	PlazaPublic  *bool           `json:"plaza_public,omitempty"`
 }
 
 /* ── Get ──────────────────────────────────────────────────────────────────── */
@@ -68,6 +69,7 @@ func (h *SettingsHandler) Get(w http.ResponseWriter, r *http.Request) {
 			"rp_id":      pk.RPID,
 			"rp_origins": strings.Join(pk.Origins, ","),
 		},
+		"plaza_public": setting.PlazaPublic(),
 	})
 }
 
@@ -206,6 +208,19 @@ func (h *SettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		applied["passkey"] = true
+	}
+
+	// Plaza visibility toggle.
+	if req.PlazaPublic != nil {
+		v := ""
+		if !*req.PlazaPublic {
+			v = "false"
+		}
+		if err := setting.Set(setting.KeyPlazaPublic, v); err != nil {
+			writeAPIError(w, http.StatusInternalServerError, "failed to save plaza visibility")
+			return
+		}
+		applied["plaza_public"] = *req.PlazaPublic
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{"applied": applied})

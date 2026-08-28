@@ -165,6 +165,7 @@ func (h *ModelMetaHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	database.DB.Where("name = ?", name).First(&meta)
+	InvalidatePriceCache() // bill with fresh prices on the next request
 	writeJSON(w, http.StatusOK, map[string]interface{}{"meta": meta})
 }
 
@@ -186,5 +187,6 @@ func (h *ModelMetaHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusNotFound, "model meta not found")
 		return
 	}
+	InvalidatePriceCache()
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 }

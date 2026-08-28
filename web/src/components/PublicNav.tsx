@@ -8,11 +8,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSite } from '../contexts/SiteContext'
 
 /** Public site links shared by desktop nav and the mobile drawer. */
-function usePublicLinks() {
+function usePublicLinks(plazaPublic: boolean, signedIn: boolean) {
   const { t } = useTranslation()
   return [
     { to: '/', label: t('nav.home'), end: true },
-    { to: '/models', label: t('plaza.title'), end: false },
+    ...(plazaPublic || signedIn ? [{ to: '/models', label: t('plaza.title'), end: false }] : []),
     { to: '/about', label: t('nav.about'), end: false },
     { href: 'https://github.com/RingKoAI/RingRouter', label: t('nav.docs'), external: true },
   ]
@@ -29,7 +29,8 @@ export default function PublicNav() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const links = usePublicLinks()
+  const { plazaPublic } = useSite()
+  const links = usePublicLinks(plazaPublic, Boolean(user))
 
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)

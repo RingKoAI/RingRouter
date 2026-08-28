@@ -9,6 +9,7 @@ export interface SiteInfo {
   turnstileEnabled: boolean
   turnstileSitekey: string
   passkeyEnabled: boolean
+  plazaPublic: boolean
 }
 
 const DEFAULT_SITE: SiteInfo = {
@@ -19,6 +20,7 @@ const DEFAULT_SITE: SiteInfo = {
   turnstileEnabled: false,
   turnstileSitekey: '',
   passkeyEnabled: false,
+  plazaPublic: true,
 }
 
 interface SiteContextValue extends SiteInfo {
@@ -46,6 +48,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         turnstile_enabled?: boolean
         turnstile_sitekey?: string
         passkey_enabled?: boolean
+        plaza_public?: boolean
       }>('/api/status')
       setInfo({
         siteName: d.site_name?.trim() || DEFAULT_SITE.siteName,
@@ -55,6 +58,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         turnstileEnabled: Boolean(d.turnstile_enabled),
         turnstileSitekey: d.turnstile_sitekey || '',
         passkeyEnabled: Boolean(d.passkey_enabled),
+        plazaPublic: d.plaza_public !== false,
       })
     } catch {
       // Backend unreachable: keep defaults so the UI stays branded.

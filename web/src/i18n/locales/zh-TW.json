@@ -345,7 +345,9 @@
     "save": "儲存設定",
     "saved": "已儲存",
     "configured": "已設定",
-    "notConfigured": "未設定"
+    "notConfigured": "未設定",
+    "plazaPublic": "模型廣場公開",
+    "plazaPublicDesc": "關閉後僅登入使用者可瀏覽 /models"
   },
   "plans": {
     "title": "訂閱計畫",
@@ -456,7 +458,8 @@
     "modelUnit": "個模型",
     "pageInfo": "第 {{page}} 頁，共 {{pages}} 頁",
     "noDesc": "尚無描述。",
-    "colModel": "模型"
+    "colModel": "模型",
+    "locked": "管理員已將模型廣場設為僅登入可見"
   },
   "about": {
     "desc": "RingRouter 是一個自部署的 LLM API 閘道：多種協定進出、多渠道路由與故障轉移、通行密鑰登入、訂閱計畫與分組倍率，單二進位即可運行。",

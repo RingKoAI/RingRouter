@@ -52,6 +52,10 @@ const (
 	KeyPasskeyEnabled = "passkey_enabled"
 	KeyPasskeyRPID    = "passkey_rp_id"     // e.g. example.com
 	KeyPasskeyOrigins = "passkey_rp_origins" // csv, e.g. https://example.com
+
+	// Model plaza visibility: "false" restricts /api/plaza and /models to
+	// signed-in users; absent/any other value keeps it public.
+	KeyPlazaPublic = "plaza_public"
 )
 
 // DefaultSiteName is used when the site_name option is unset.
@@ -158,6 +162,12 @@ const (
 	DefaultPasskeyRPID    = "localhost"
 	DefaultPasskeyOrigins = "http://localhost:5173,http://localhost:3000"
 )
+
+// PlazaPublic reports whether the model plaza is browsable anonymously.
+// Defaults to public; only the explicit "false" restricts it.
+func PlazaPublic() bool {
+	return Get(KeyPlazaPublic) != "false"
+}
 
 // Passkey returns the resolved WebAuthn configuration.
 func Passkey() PasskeyConfig {

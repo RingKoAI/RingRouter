@@ -61,7 +61,7 @@ _✦ One gateway, every provider — multi-protocol in, multi-channel out, self-
 - [x] Built-in streaming playground
 - [x] Four UI languages (zh / zh-TW / zh-HK / en), dark mode, single-binary deploy (frontend embedded)
 
-**Not yet implemented** (PRs welcome): weighted load balancing, per-request quota deduction, per-model pricing, redemption codes, referral rewards, OAuth2 sign-in
+**Not yet implemented** (PRs welcome): weighted load balancing, redemption codes, referral rewards, OAuth2 sign-in
 
 ## Quick Start
 
@@ -157,7 +157,7 @@ RingRouter is inspired by and pays respect to [one-api](https://github.com/songq
 | Groups | First-class entity (uuid / metadata / ratio) + multi-group channels | String convention + ratio config |
 | Subscriptions | Plan/subscription snapshots with lifecycle | None (quota top-up model) |
 | Auth | Password + email codes + Passkeys + Turnstile | Password + email + several OAuth |
-| Billing | Plan-grant model (quota/ratios ready, per-request deduction TODO) | Full quota system |
+| Billing | Plan grants + per-request deduction (price × group ratio, $1 = 500k points) | Full quota system |
 
 ## Development
 

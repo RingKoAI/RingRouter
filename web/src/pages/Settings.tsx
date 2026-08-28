@@ -7,6 +7,7 @@ interface SettingsData {
   site_name: string
   announcement: string
   usage_mode: string
+  plaza_public: boolean
   smtp: { host: string; port: number; username: string; from: string; has_password: boolean; enabled: boolean }
   passkey: { enabled: boolean; rp_id: string; rp_origins: string }
 }
@@ -31,6 +32,7 @@ export default function Settings() {
         site_name: data.site_name,
         announcement: data.announcement,
         usage_mode: data.usage_mode,
+        plaza_public: data.plaza_public,
         passkey: { enabled: data.passkey.enabled, rp_id: data.passkey.rp_id, rp_origins: data.passkey.rp_origins },
       }
       if (data.smtp.host) {
@@ -71,6 +73,18 @@ export default function Settings() {
           <input className={inputCls} value={data.site_name} maxLength={64}
             onChange={(e) => setData({ ...data, site_name: e.target.value })} />
         </div>
+        <label className="flex items-center justify-between p-3 rounded-lg bg-muted cursor-pointer">
+          <div>
+            <p className="text-sm font-medium">{t('settings.plazaPublic')}</p>
+            <p className="text-xs text-muted-foreground">{t('settings.plazaPublicDesc')}</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={data.plaza_public}
+            onChange={(e) => setData({ ...data, plaza_public: e.target.checked })}
+            className="w-4 h-4 accent-[var(--color-primary)] cursor-pointer"
+          />
+        </label>
         <div>
           <label className="block text-sm mb-1.5">{t('settings.announcement')}</label>
           <textarea className={`${inputCls} min-h-[72px] resize-y`} value={data.announcement} maxLength={1024}
