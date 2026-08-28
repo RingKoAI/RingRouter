@@ -1,3 +1,7 @@
+<p align="right">
+  <strong>中文</strong> | <a href="./README.en.md">English</a>
+</p>
+
 <div align="center">
 
 # RingRouter
@@ -165,7 +169,7 @@ go build ./... && go vet ./... && go test ./internal/...
 cd web && pnpm install && pnpm dev   # Vite :5173，代理到 :3000
 ```
 
-目录结构：`internal/` 后端（config / crypto / database / gateway / handler / inbound / middleware / model / provider / setting / turnstile / cache），`web/` 前端（React 19 + Vite + Tailwind v4）。
+目录结构：`internal/` 后端（config / crypto / database / gateway / handler / inbound / middleware / model / provider / setting / turnstile / cache），`web/` 前端（React 19 + Vite + Tailwind v4）。界面翻译位于 `web/src/i18n/locales`（zh / zh-TW / zh-HK / en 四语言，新增文案必须四份同步）。
 
 ## License
 

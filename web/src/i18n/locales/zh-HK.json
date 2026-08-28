@@ -51,24 +51,6 @@
     "footer": "MIT 授權。Go + React 建構。",
     "plaza": "模型廣場"
   },
-  "features": {
-    "unified": {
-      "title": "統一 API",
-      "desc": "一個介面對接所有 LLM 供應商。唔使改程式碼就可以切換模型。"
-    },
-    "multi": {
-      "title": "多供應商",
-      "desc": "支援 OpenAI、Claude、Gemini、Azure 等。秒級新增供應商。"
-    },
-    "keys": {
-      "title": "API Key 管理",
-      "desc": "建立、撤銷、限流 API Key。按 Key 同用戶追蹤用量。"
-    },
-    "self": {
-      "title": "自架",
-      "desc": "運行喺自己嘅基礎設施上面。資料唔離開你嘅網路。單二進位部署。"
-    }
-  },
   "auth": {
     "signIn": "登入",
     "signInTitle": "歡迎回來",
