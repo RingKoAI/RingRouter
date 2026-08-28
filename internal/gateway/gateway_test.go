@@ -33,6 +33,32 @@ func TestSupports(t *testing.T) {
 	}
 }
 
+func TestInGroupMultiGroupSemantics(t *testing.T) {
+	cases := []struct {
+		name    string
+		chGroup string
+		req     string
+		want    bool
+	}{
+		{"single exact", "vip", "vip", true},
+		{"single mismatch", "vip", "basic", false},
+		{"multi contains", "default, vip", "vip", true},
+		{"multi first", "default, vip", "default", true},
+		{"multi miss", "default, vip", "basic", false},
+		{"multi with spaces", "default,vip, enterprise", "enterprise", true},
+		{"default matches default", "default", "default", true},
+		{"default matches empty chGroup", "", "default", true},
+		{"default does not match vip-only", "vip", "default", false},
+		{"empty request is default", "vip, default", "", true},
+	}
+	for _, c := range cases {
+		ch := &model.Channel{Group: c.chGroup}
+		if got := inGroup(ch, c.req); got != c.want {
+			t.Errorf("%s: inGroup(%q, %q) = %v, want %v", c.name, c.chGroup, c.req, got, c.want)
+		}
+	}
+}
+
 // fakeOpenAIUpstream returns an httptest server speaking OpenAI wire format.
 func fakeOpenAIUpstream(t *testing.T, status int, content string) *httptest.Server {
 	t.Helper()
@@ -63,13 +89,13 @@ func inject(t *testing.T, g *Gateway, channels []*model.Channel) {
 
 func TestChatPrefersHigherPriority(t *testing.T) {
 	ok := fakeOpenAIUpstream(t, 200, "from-ok")
-	g := New()
+	g := New(nil)
 	inject(t, g, []*model.Channel{
-		{ID: 1, Name: "primary", Type: "openai", BaseURL: ok.URL, Models: "m", Priority: 10},
-		{ID: 2, Name: "backup", Type: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 1},
+		{ID: 1, Name: "primary", Protocol: "openai", BaseURL: ok.URL, Models: "m", Priority: 10},
+		{ID: 2, Name: "backup", Protocol: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 1},
 	})
 
-	resp, ch, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"})
+	resp, ch, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"}, "")
 	if err != nil {
 		t.Fatalf("chat: %v", err)
 	}
@@ -83,13 +109,13 @@ func TestChatPrefersHigherPriority(t *testing.T) {
 
 func TestChatFailoverFallsToBackup(t *testing.T) {
 	backup := fakeOpenAIUpstream(t, 200, "from-backup")
-	g := New()
+	g := New(nil)
 	inject(t, g, []*model.Channel{
-		{ID: 1, Name: "primary", Type: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 10},
-		{ID: 2, Name: "backup", Type: "openai", BaseURL: backup.URL, Models: "m", Priority: 1},
+		{ID: 1, Name: "primary", Protocol: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 10},
+		{ID: 2, Name: "backup", Protocol: "openai", BaseURL: backup.URL, Models: "m", Priority: 1},
 	})
 
-	resp, ch, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"})
+	resp, ch, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"}, "")
 	if err != nil {
 		t.Fatalf("chat: %v", err)
 	}
@@ -102,13 +128,13 @@ func TestChatFailoverFallsToBackup(t *testing.T) {
 }
 
 func TestChatAllChannelsFail(t *testing.T) {
-	g := New()
+	g := New(nil)
 	inject(t, g, []*model.Channel{
-		{ID: 1, Name: "a", Type: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 10},
-		{ID: 2, Name: "b", Type: "openai", BaseURL: "http://127.0.0.1:2", Models: "m", Priority: 1},
+		{ID: 1, Name: "a", Protocol: "openai", BaseURL: "http://127.0.0.1:1", Models: "m", Priority: 10},
+		{ID: 2, Name: "b", Protocol: "openai", BaseURL: "http://127.0.0.1:2", Models: "m", Priority: 1},
 	})
 
-	_, _, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"})
+	_, _, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"}, "")
 	if err == nil {
 		t.Fatal("expected error when all channels fail")
 	}
@@ -119,12 +145,12 @@ func TestChatAllChannelsFail(t *testing.T) {
 
 func TestChatNoChannelServesModel(t *testing.T) {
 	ok := fakeOpenAIUpstream(t, 200, "x")
-	g := New()
+	g := New(nil)
 	inject(t, g, []*model.Channel{
-		{ID: 1, Name: "a", Type: "openai", BaseURL: ok.URL, Models: "other-model", Priority: 10},
+		{ID: 1, Name: "a", Protocol: "openai", BaseURL: ok.URL, Models: "other-model", Priority: 10},
 	})
 
-	_, _, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"})
+	_, _, err := g.Chat(context.Background(), &dto.ChatRequest{Model: "m"}, "")
 	if err == nil || !strings.Contains(err.Error(), "no active channel") {
 		t.Fatalf("err = %v, want no-active-channel error", err)
 	}
@@ -140,10 +166,10 @@ func TestModelsAggregationDedup(t *testing.T) {
 	}))
 	defer s2.Close()
 
-	g := New()
+	g := New(nil)
 	inject(t, g, []*model.Channel{
-		{ID: 1, Name: "s1", Type: "openai", BaseURL: s1.URL, Models: "a,b", Priority: 5},
-		{ID: 2, Name: "s2", Type: "openai", BaseURL: s2.URL, Models: "b,c", Priority: 5},
+		{ID: 1, Name: "s1", Protocol: "openai", BaseURL: s1.URL, Models: "a,b", Priority: 5},
+		{ID: 2, Name: "s2", Protocol: "openai", BaseURL: s2.URL, Models: "b,c", Priority: 5},
 	})
 
 	models := g.Models(context.Background())

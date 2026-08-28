@@ -9,9 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RingKoAI/RingRouter/internal/database"
 	"github.com/RingKoAI/RingRouter/internal/dto"
 	"github.com/RingKoAI/RingRouter/internal/gateway"
 	"github.com/RingKoAI/RingRouter/internal/inbound"
+	"github.com/RingKoAI/RingRouter/internal/middleware"
+	"github.com/RingKoAI/RingRouter/internal/model"
 	"github.com/RingKoAI/RingRouter/internal/provider"
 )
 
@@ -76,14 +79,17 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := p.routeChat(r, req)
+	start := time.Now()
+	resp, ch, err := p.routeChat(r, req)
 	if err != nil {
 		log.Printf("[proxy] route error: %v", err)
+		p.recordLog(r, req.Model, ch, "failed", err.Error(), time.Since(start))
 		p.writeErr(w, codec, http.StatusBadGateway, "upstream_error", err.Error())
 		return
 	}
 	resp.Model = req.Model
 	resp.Created = time.Now().Unix()
+	p.recordUsage(r, req.Model, ch, resp, time.Since(start))
 
 	out, err := codec.EncodeChat(resp)
 	if err != nil {
@@ -96,20 +102,82 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 }
 
 // routeChat tries DB channels first, then falls back to the env provider.
-func (p *Proxy) routeChat(r *http.Request, req *dto.ChatRequest) (*dto.ChatResponse, error) {
-	resp, _, err := p.gw.Chat(r.Context(), req)
+func (p *Proxy) routeChat(r *http.Request, req *dto.ChatRequest) (*dto.ChatResponse, *model.Channel, error) {
+	resp, ch, err := p.gw.Chat(r.Context(), req, p.routeGroup(r))
 	if err == nil {
-		return resp, nil
+		return resp, ch, nil
 	}
 	if p.envOpenAI != nil {
 		if resp, err2 := p.envOpenAI.Chat(r.Context(), req); err2 == nil {
 			log.Printf("[proxy] served by env-default provider (no channel matched: %v)", err)
-			return resp, nil
+			return resp, nil, nil
 		} else {
 			log.Printf("[proxy] env fallback failed: %v", err2)
 		}
 	}
-	return nil, err
+	return nil, nil, err
+}
+
+// recordUsage writes a success log entry with token counts (async).
+func (p *Proxy) recordUsage(r *http.Request, modelName string, ch *model.Channel, resp *dto.ChatResponse, elapsed time.Duration) {
+	var channelID uint
+	if ch != nil {
+		channelID = ch.ID
+	}
+	var prompt, completion int
+	if resp != nil {
+		prompt = resp.Usage.PromptTokens
+		completion = resp.Usage.CompletionTokens
+	}
+	p.recordLogFull(r, modelName, channelID, prompt, completion, "success", "", elapsed)
+}
+
+// recordLog writes a failure log entry (async).
+func (p *Proxy) recordLog(r *http.Request, modelName string, ch *model.Channel, status, errMsg string, elapsed time.Duration) {
+	var channelID uint
+	if ch != nil {
+		channelID = ch.ID
+	}
+	p.recordLogFull(r, modelName, channelID, 0, 0, status, errMsg, elapsed)
+}
+
+// recordLogFull persists a request log asynchronously; a logging failure must
+// never fail the proxy response.
+func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint, prompt, completion int, status, errMsg string, elapsed time.Duration) {
+	if database.DB == nil {
+		return
+	}
+	u := middleware.GetUser(r.Context())
+	tok := middleware.GetToken(r.Context())
+	entry := model.Log{
+		ModelName:    modelName,
+		ChannelID:    channelID,
+		PromptTokens: prompt,
+		CompTokens:   completion,
+		Status:       status,
+		ErrorMsg:     truncate(errMsg, 512),
+		IP:           extractIP(r),
+		CreatedAt:    time.Now(),
+	}
+	if u != nil {
+		entry.UserID = u.ID
+	}
+	if tok != nil {
+		entry.TokenID = tok.ID
+	}
+	entry.ElapsedMs = elapsed.Milliseconds()
+	go func() {
+		if err := database.DB.Create(&entry).Error; err != nil {
+			log.Printf("[proxy] log write failed: %v", err)
+		}
+	}()
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }
 
 // handleStream serves streaming requests.
@@ -118,7 +186,7 @@ func (p *Proxy) routeChat(r *http.Request, req *dto.ChatRequest) (*dto.ChatRespo
 // upstream SSE untouched. Cross-format streams are consumed fully server-side
 // and re-emitted as a single data frame in the inbound format.
 func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbound.Codec, req *dto.ChatRequest) {
-	res, _, err := p.gw.ChatStream(r.Context(), req)
+	res, _, err := p.gw.ChatStream(r.Context(), req, p.routeGroup(r))
 	if err != nil && p.envOpenAI != nil {
 		if res2, err2 := p.envOpenAI.ChatStream(r.Context(), req); err2 == nil {
 			res, err = res2, nil
@@ -215,6 +283,20 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)
+}
+
+// routeGroup reads the routing group from the authenticated token in the
+// request context. Empty / "default" selects the default channel pool. The
+// group is bound to the API key, so clients cannot escalate by setting a
+// header.
+func (p *Proxy) routeGroup(r *http.Request) string {
+	tok := middleware.GetToken(r.Context())
+	if tok != nil {
+		if g := strings.TrimSpace(tok.Group); g != "" {
+			return g
+		}
+	}
+	return "default"
 }
 
 // extractGeminiModel pulls the model out of /v1beta/models/{model}:method.
