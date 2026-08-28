@@ -126,7 +126,10 @@
     "channels": "Channels",
     "sectionGateway": "Gateway",
     "sectionAdmin": "Admin",
-    "announcement": "Announcement"
+    "announcement": "Announcement",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "backHome": "Back to site"
   },
   "nav": {
     "chat": "Chat",
@@ -326,7 +329,14 @@
     "empty": "No keys yet",
     "search": "Search keys…",
     "created": "Key created",
-    "emptyHint": "Create a key and call the gateway from any OpenAI-compatible client"
+    "emptyHint": "Create a key and call the gateway from any OpenAI-compatible client",
+    "sbTotal": "Total",
+    "sbActive": "Active",
+    "sbGroups": "Groups",
+    "sbStatus": "Status",
+    "sbGroup": "Group",
+    "sbAll": "All",
+    "sbDisabled": "Disabled"
   },
   "logs": {
     "title": "Usage Logs",

@@ -126,7 +126,10 @@
     "channels": "渠道",
     "sectionGateway": "閘道",
     "sectionAdmin": "管理",
-    "announcement": "公告"
+    "announcement": "公告",
+    "collapse": "折疊側欄",
+    "expand": "展開側欄",
+    "backHome": "返回主頁"
   },
   "nav": {
     "chat": "聊天",
@@ -326,7 +329,14 @@
     "empty": "暫無金鑰",
     "search": "搜尋金鑰名稱…",
     "created": "金鑰已建立",
-    "emptyHint": "建立金鑰後即可用 OpenAI 兼容客戶端調用網關"
+    "emptyHint": "建立金鑰後即可用 OpenAI 兼容客戶端調用網關",
+    "sbTotal": "總數",
+    "sbActive": "啟用",
+    "sbGroups": "分組",
+    "sbStatus": "狀態",
+    "sbGroup": "分組",
+    "sbAll": "全部",
+    "sbDisabled": "停用"
   },
   "logs": {
     "title": "使用日誌",

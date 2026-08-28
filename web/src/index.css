@@ -227,3 +227,13 @@ button, a, input {
   .lift { transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease; }
   .lift:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.25); }
 }
+
+
+/* Slim scrollbar for dashboard sidebars */
+.rr-scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.rr-scroll-thin::-webkit-scrollbar { width: 5px; }
+.rr-scroll-thin::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 9999px; }
+.rr-scroll-thin::-webkit-scrollbar-track { background: transparent; }

@@ -6,7 +6,8 @@ import {
   LayoutDashboard, BarChart3, Key, FileText, ClipboardList,
   Wallet, User,
   Server, Cpu, Users, Ticket, CreditCard, Info, Settings,
-  LogOut, Menu, Zap, Megaphone,
+  LogOut, Menu, Zap, Megaphone, PanelLeftClose, PanelLeftOpen,
+  Home, ShieldCheck, ChevronRight,
 } from 'lucide-react'
 import ThemeLangActions from './ThemeLangActions'
 import UserAvatar from './UserAvatar'
@@ -50,6 +51,8 @@ const adminNav: NavItem[] = [
   { path: '/dash/manage/settings', labelKey: 'nav.settings', icon: Settings },
 ]
 
+const collapseKey = 'ringrouter.sidebar.collapsed'
+
 /* ── Layout ───────────────────────────────────────────────────────────────── */
 
 export default function Layout() {
@@ -59,10 +62,15 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const { siteName } = useSite()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(collapseKey) === '1')
   const [annOpen, setAnnOpen] = useState(false)
   const [announcement, setAnnouncement] = useState<string | null>(null)
 
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
+
+  useEffect(() => {
+    localStorage.setItem(collapseKey, collapsed ? '1' : '0')
+  }, [collapsed])
 
   useEffect(() => {
     api.get<{ announcement: string }>('/api/announcement')
@@ -81,7 +89,7 @@ export default function Layout() {
 
   const allItems = [...chatNav, ...generalNav, ...personalNav, ...adminNav]
   const current = allItems.find((i) => isActive(i.path))
-  const pageTitle = current ? t(current.labelKey) : t('nav.overview')
+  const isAdminArea = location.pathname.startsWith('/dash/manage')
 
   /* ── Sidebar ── */
 
@@ -94,23 +102,26 @@ export default function Layout() {
           <li key={item.path}>
             <Link
               to={item.path}
-              className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150 ${
+              title={collapsedState ? t(item.labelKey) : undefined}
+              className={`group relative flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-150 ${
+                collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2'
+              } ${
                 active
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <span
-                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-1 h-4 rounded-full bg-primary transition-all duration-150 ${
+                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-1 h-4 rounded-full bg-primary transition-all duration-150 ${
                   active ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
                 }`}
               />
               <Icon
                 size={16}
                 strokeWidth={active ? 2.2 : 1.8}
-                className={`transition-transform duration-150 group-hover:scale-110 ${active ? 'text-primary' : ''}`}
+                className={`transition-transform duration-150 group-hover:scale-110 shrink-0 ${active ? 'text-primary' : ''}`}
               />
-              {t(item.labelKey)}
+              {!collapsedState && <span className="truncate">{t(item.labelKey)}</span>}
             </Link>
           </li>
         )
@@ -118,61 +129,71 @@ export default function Layout() {
     </ul>
   )
 
-  const Section = ({ labelKey, items }: { labelKey: string; items: NavItem[] }) => (
+  const Section = ({ labelKey, items, admin }: { labelKey: string; items: NavItem[]; admin?: boolean }) => (
     <div>
-      <p className="px-2.5 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-        {t(labelKey)}
-      </p>
+      {collapsedState ? (
+        <div className="mx-auto my-2 h-px w-6 bg-border" />
+      ) : (
+        <p className="px-2.5 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 flex items-center gap-1.5">
+          {admin && <ShieldCheck size={11} className="text-primary/70" />}
+          {t(labelKey)}
+        </p>
+      )}
       {renderNavItems(items)}
     </div>
   )
 
-  const sidebarContent = (
+  const sidebarContent = (collapsedState: boolean) => (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="h-16 px-4 flex items-center gap-3 border-b border-border shrink-0">
-        <div className="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-sm">
+      <div className={`h-16 flex items-center gap-3 border-b border-border shrink-0 ${collapsedState ? 'justify-center px-2' : 'px-4'}`}>
+        <Link to="/" className="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-sm hover:scale-105 transition-transform">
           <Zap size={17} className="text-primary-foreground" strokeWidth={2.5} />
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-[15px] leading-tight tracking-tight truncate">{siteName}</span>
-            <span className="px-1.5 py-px text-[9px] font-mono font-medium rounded bg-muted text-muted-foreground leading-4">
-              v0.1
-            </span>
+        </Link>
+        {!collapsedState && (
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-[15px] leading-tight tracking-tight truncate">{siteName}</span>
+              <span className="px-1.5 py-px text-[9px] font-mono font-medium rounded bg-muted text-muted-foreground leading-4">
+                v0.1
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-tight truncate">{t('layout.subtitle')}</p>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-tight truncate">{t('layout.subtitle')}</p>
-        </div>
+        )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      {/* Nav — slim scrollbar */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 rr-scroll-thin">
         {renderNavItems(chatNav)}
         <Section labelKey="nav.sectionGeneral" items={generalNav} />
         <Section labelKey="nav.sectionPersonal" items={personalNav} />
         {user?.role === 'admin' && (
-          <Section labelKey="nav.sectionAdmin" items={adminNav} />
+          <Section labelKey="nav.sectionAdmin" items={adminNav} admin />
         )}
       </nav>
 
-      {/* User card */}
-      <div className="p-3 border-t border-border shrink-0">
-        <div className="flex items-center gap-2.5 px-1.5 py-1.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shrink-0">
+      {/* User card / collapse handle */}
+      <div className={`border-t border-border shrink-0 ${collapsed ? 'py-2' : 'p-3'}`}>
+        <div className={`flex items-center gap-2.5 ${collapsedState ? 'flex-col px-0 py-1' : 'px-1.5 py-1.5'}`}>
+          <div
+            title={user?.username}
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shrink-0"
+          >
             <span className="text-primary-foreground text-xs font-semibold uppercase">
               {(user?.username || 'a').charAt(0)}
             </span>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-medium leading-tight truncate">{user?.username || '—'}</p>
-            <p className="text-[11px] text-muted-foreground leading-tight capitalize">
-              {user?.role || ''}
-            </p>
-          </div>
+          {!collapsedState && (
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium leading-tight truncate">{user?.username || '—'}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight capitalize">{user?.role || ''}</p>
+            </div>
+          )}
           <button
             onClick={handleLogout}
             title={t('layout.logout')}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer shrink-0"
+            className={`p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer shrink-0 ${collapsedState ? 'w-full' : ''}`}
           >
             <LogOut size={15} strokeWidth={2} />
           </button>
@@ -183,8 +204,10 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <aside className="hidden md:flex w-60 bg-card border-r border-border flex-col shrink-0">
-        {sidebarContent}
+      <aside
+        className={`hidden md:flex ${collapsed ? 'w-[68px]' : 'w-60'} bg-card border-r border-border flex-col shrink-0 transition-[width] duration-200`}
+      >
+        {sidebarContent(collapsed)}
       </aside>
 
       {sidebarOpen && (
@@ -194,24 +217,56 @@ export default function Layout() {
             onClick={() => setSidebarOpen(false)}
           />
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-card border-r border-border shadow-xl animate-[slideIn_200ms_ease]">
-            {sidebarContent}
+            {sidebarContent(false)}
           </div>
         </div>
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 shrink-0 border-b border-border bg-card/70 backdrop-blur flex items-center gap-3 px-4 md:px-6">
+        <header className="h-16 shrink-0 border-b border-border bg-card/70 backdrop-blur flex items-center gap-2 px-3 md:px-4">
+          {/* Mobile hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden p-2 -ml-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
             aria-label="Open menu"
           >
             <Menu size={19} strokeWidth={2} />
           </button>
 
-          <h1 className="text-[15px] font-semibold tracking-tight truncate">{pageTitle}</h1>
+          {/* Desktop collapse toggle */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:inline-flex p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? t('layout.expand') : t('layout.collapse')}
+          >
+            {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+          </button>
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 min-w-0" aria-label="Breadcrumb">
+            {isAdminArea && (
+              <>
+                <span className="text-[13px] text-muted-foreground hidden sm:inline">{t('nav.sectionAdmin')}</span>
+                <ChevronRight size={13} className="text-muted-foreground/50 hidden sm:inline" />
+              </>
+            )}
+            <h1 className="text-[15px] font-semibold tracking-tight truncate">
+              {current ? t(current.labelKey) : t('nav.overview')}
+            </h1>
+          </nav>
 
           <div className="flex-1" />
+
+          {/* Back to public site */}
+          <Link
+            to="/"
+            title={t('layout.backHome')}
+            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Home size={14} />
+            {t('nav.home')}
+          </Link>
 
           {announcement && announcement.trim() !== '' && (
             <div className="relative">

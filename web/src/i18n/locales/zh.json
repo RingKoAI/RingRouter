@@ -126,7 +126,10 @@
     "channels": "渠道",
     "sectionGateway": "网关",
     "sectionAdmin": "管理",
-    "announcement": "公告"
+    "announcement": "公告",
+    "collapse": "折叠侧边栏",
+    "expand": "展开侧边栏",
+    "backHome": "返回首页"
   },
   "nav": {
     "chat": "聊天",
@@ -326,7 +329,14 @@
     "empty": "暂无密钥",
     "search": "搜索密钥名称…",
     "created": "密钥已创建",
-    "emptyHint": "创建一个密钥，即可用 OpenAI 兼容客户端调用网关"
+    "emptyHint": "创建一个密钥，即可用 OpenAI 兼容客户端调用网关",
+    "sbTotal": "总数",
+    "sbActive": "启用",
+    "sbGroups": "分组",
+    "sbStatus": "状态",
+    "sbGroup": "分组",
+    "sbAll": "全部",
+    "sbDisabled": "禁用"
   },
   "logs": {
     "title": "使用日志",
