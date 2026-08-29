@@ -117,6 +117,8 @@ ADMIN_KEY=change-me ./ringrouter
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` | 无数据库渠道时的兜底上游（可选） | — |
 | `ANNOUNCEMENT` | 首次启动播种公告（可选） | — |
 | `TURNSTILE_SITEKEY` / `TURNSTILE_SECRET` | Cloudflare Turnstile | 未启用 |
+| `RATE_LIMIT_API` / `RATE_LIMIT_WEB` / `RATE_LIMIT_CRITICAL` | 每 IP 滑动窗口限额（网关 / 管理面 / 登录注册等敏感端点，`0` 关闭） | `480` / `240` / `20` |
+| `CHANNEL_ALLOW_PRIVATE_ADDR` | 渠道 base_url 允许内网地址；`false` 开启 SSRF 加固（拒绝环回/私网/链路本地） | `true` |
 
 > [!IMPORTANT]
 > 生产部署务必固定 `JWT_SECRET`（随机默认值重启轮换会使已加密的渠道密钥无法解密），并启用 HTTPS。

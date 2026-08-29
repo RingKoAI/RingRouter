@@ -263,7 +263,7 @@ func (h *GroupHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	database.DB.Raw(`SELECT COUNT(*) FROM channels WHERE `+col+` LIKE ?`, "%"+g.Name+"%").Scan(&count)
 	if count > 0 {
 		var channels []model.Channel
-		database.DB.Where(col + ` LIKE ?`, "%"+g.Name+"%").Find(&channels)
+		database.DB.Where(col+` LIKE ?`, "%"+g.Name+"%").Find(&channels)
 		for _, ch := range channels {
 			for _, cg := range strings.Split(ch.Group, ",") {
 				if strings.TrimSpace(cg) == g.Name {

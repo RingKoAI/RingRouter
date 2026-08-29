@@ -65,21 +65,21 @@ func NewAuthHandler(adminKey string, mailer mailSender) *AuthHandler {
 /* ── Requests ─────────────────────────────────────────────────────────────── */
 
 type registerRequest struct {
-	Username        string `json:"username"`
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	TurnstileToken  string `json:"cf_turnstile_response"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	TurnstileToken string `json:"cf_turnstile_response"`
 }
 
 type loginRequest struct {
-	Account         string `json:"account"` // username or email
-	Password        string `json:"password"`
-	TurnstileToken  string `json:"cf_turnstile_response"`
+	Account        string `json:"account"` // username or email
+	Password       string `json:"password"`
+	TurnstileToken string `json:"cf_turnstile_response"`
 }
 
 type adminKeyRequest struct {
-	Key             string `json:"key"`
-	TurnstileToken  string `json:"cf_turnstile_response"`
+	Key            string `json:"key"`
+	TurnstileToken string `json:"cf_turnstile_response"`
 }
 
 type sendCodeRequest struct {

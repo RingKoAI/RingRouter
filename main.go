@@ -48,8 +48,20 @@ func main() {
 		Path: cfg.DBPath,
 		DSN:  cfg.DBDSN,
 	}
-	if err := database.Connect(dbCfg); err != nil {
-		log.Printf("[ringrouter] WARNING: database connection failed: %v", err)
+	// Containers can restart out of order; retry briefly before degrading
+	// to admin-key-only mode so a fast app never races a slower database.
+	var dbErr error
+	for attempt := 1; attempt <= 15; attempt++ {
+		if dbErr = database.Connect(dbCfg); dbErr == nil {
+			break
+		}
+		if attempt == 1 {
+			log.Printf("[ringrouter] database not ready, retrying: %v", dbErr)
+		}
+		time.Sleep(2 * time.Second)
+	}
+	if dbErr != nil {
+		log.Printf("[ringrouter] WARNING: database connection failed after retries: %v", dbErr)
 		log.Println("[ringrouter] running without database - admin key auth only")
 	} else {
 		defer database.Close()

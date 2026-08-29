@@ -61,7 +61,7 @@ type completeRequest struct {
 	Password       string               `json:"password"`
 	SiteName       string               `json:"site_name"` // optional, defaults kept when empty
 	UsageMode      string               `json:"usage_mode"`
-	SMTP           *smtpPayload         `json:"smtp,omitempty"`   // nil/absent = skipped
+	SMTP           *smtpPayload         `json:"smtp,omitempty"`    // nil/absent = skipped
 	Passkey        *passkeySetupPayload `json:"passkey,omitempty"` // nil/absent = left disabled
 	TurnstileToken string               `json:"cf_turnstile_response"`
 }

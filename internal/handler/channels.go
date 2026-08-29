@@ -18,7 +18,7 @@ const maxChannels = 500
 
 // ChannelHandler serves the admin channel management API.
 type ChannelHandler struct {
-	sealer    SecretSealer
+	sealer     SecretSealer
 	invalidate func() // invoked after mutations; drops the gateway channel cache
 }
 
@@ -105,6 +105,11 @@ func validateChannelPayload(p *channelPayload, requireAll bool) error {
 	}
 	if base != "" && len(base) > 256 {
 		return errors.New("base_url must be at most 256 characters")
+	}
+	if base != "" {
+		if err := validateChannelURL(base); err != nil {
+			return errors.New("base_url rejected: " + err.Error())
+		}
 	}
 	if requireAll && strings.TrimSpace(p.APIKey) == "" {
 		return errors.New("api_key is required when creating a channel")
@@ -306,6 +311,10 @@ func (h *ChannelHandler) Update(w http.ResponseWriter, r *http.Request) {
 		updates["protocol"] = t
 	}
 	if b := strings.TrimSpace(p.BaseURL); b != "" {
+		if err := validateChannelURL(b); err != nil {
+			writeAPIError(w, http.StatusBadRequest, "base_url rejected: "+err.Error())
+			return
+		}
 		updates["base_url"] = b
 	}
 	if m := strings.TrimSpace(p.Models); m != "" {

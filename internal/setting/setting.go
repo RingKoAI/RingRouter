@@ -50,12 +50,16 @@ const (
 
 	// Passkey (WebAuthn) settings.
 	KeyPasskeyEnabled = "passkey_enabled"
-	KeyPasskeyRPID    = "passkey_rp_id"     // e.g. example.com
+	KeyPasskeyRPID    = "passkey_rp_id"      // e.g. example.com
 	KeyPasskeyOrigins = "passkey_rp_origins" // csv, e.g. https://example.com
 
 	// Model plaza visibility: "false" restricts /api/plaza and /models to
 	// signed-in users; absent/any other value keeps it public.
 	KeyPlazaPublic = "plaza_public"
+
+	// SensitiveWords is a comma-separated blocklist applied to outbound
+	// request text; empty disables the filter entirely.
+	KeySensitiveWords = "sensitive_words"
 )
 
 // DefaultSiteName is used when the site_name option is unset.
@@ -162,6 +166,21 @@ const (
 	DefaultPasskeyRPID    = "localhost"
 	DefaultPasskeyOrigins = "http://localhost:5173,http://localhost:3000"
 )
+
+// SensitiveWords returns the parsed text blocklist (empty = disabled).
+func SensitiveWords() []string {
+	raw := strings.TrimSpace(Get(KeySensitiveWords))
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, w := range strings.Split(raw, ",") {
+		if w = strings.TrimSpace(w); w != "" {
+			out = append(out, strings.ToLower(w))
+		}
+	}
+	return out
+}
 
 // PlazaPublic reports whether the model plaza is browsable anonymously.
 // Defaults to public; only the explicit "false" restricts it.

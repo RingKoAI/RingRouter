@@ -47,7 +47,7 @@ func (h *StatusHandler) Status(w http.ResponseWriter, r *http.Request) {
 		"passkey_enabled":   pk.Enabled,
 		"turnstile_enabled": turnstile.Enabled(),
 		"turnstile_sitekey": turnstile.Sitekey(),
-		"plaza_public":     setting.PlazaPublic(),
+		"plaza_public":      setting.PlazaPublic(),
 	})
 }
 

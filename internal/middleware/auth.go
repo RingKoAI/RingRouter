@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -61,6 +62,16 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Token-level restrictions (one-api semantics).
+		if !token.ExpiredAt.IsZero() && time.Now().After(token.ExpiredAt) {
+			writeAuthError(w, "this API key has expired")
+			return
+		}
+		if token.Subnet != "" && !IPInSubnets(clientIP(r), token.Subnet) {
+			writeAuthError(w, "this API key is restricted to specific subnets")
+			return
+		}
+
 		// Check user status
 		if token.User.Status != "active" {
 			writeAuthError(w, "user account disabled")
@@ -71,6 +82,33 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, ctxKeyToken, &token)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// IPInSubnets reports whether ip falls inside any of the comma-separated
+// CIDR ranges (or matches a bare IP entry). Malformed entries are skipped
+// rather than failing the request.
+func IPInSubnets(ipStr, csv string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	for _, cidr := range strings.Split(csv, ",") {
+		cidr = strings.TrimSpace(cidr)
+		if cidr == "" {
+			continue
+		}
+		if !strings.Contains(cidr, "/") {
+			// Bare IP: exact match.
+			if net.ParseIP(cidr).Equal(ip) {
+				return true
+			}
+			continue
+		}
+		if _, network, err := net.ParseCIDR(cidr); err == nil && network.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 func extractKey(r *http.Request) string {

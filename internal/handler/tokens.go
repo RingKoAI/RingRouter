@@ -3,9 +3,11 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/RingKoAI/RingRouter/internal/database"
 	"github.com/RingKoAI/RingRouter/internal/middleware"
@@ -26,9 +28,12 @@ func NewTokenHandler() *TokenHandler {
 }
 
 type tokenPayload struct {
-	Name   *string `json:"name"`
-	Group  *string `json:"group"`  // optional; defaults to the user's group
-	Status *string `json:"status"` // active, disabled
+	Name        *string `json:"name"`
+	Group       *string `json:"group"`        // optional; defaults to the user's group
+	Status      *string `json:"status"`       // active, disabled
+	Models      *string `json:"models"`       // comma whitelist; empty = unrestricted
+	Subnet      *string `json:"subnet"`       // comma CIDRs; empty = unrestricted
+	ExpiresDays *int    `json:"expires_days"` // >0 sets expiry N days out; 0 = never
 }
 
 /* ── List ────────────────────────────────────────────────────────────────── */
@@ -62,6 +67,38 @@ func (h *TokenHandler) List(w http.ResponseWriter, r *http.Request) {
 		out = append(out, tokenView{Token: t, KeyMasked: maskTokenKey(t.Key)})
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{"tokens": out})
+}
+
+// normalizeCSV trims each element of a comma list and drops empties.
+func normalizeCSV(s string) string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return strings.Join(out, ",")
+}
+
+// validSubnets checks every entry parses as an IP or CIDR.
+func validSubnets(csv string) bool {
+	for _, c := range strings.Split(csv, ",") {
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
+		}
+		if strings.Contains(c, "/") {
+			if _, _, err := net.ParseCIDR(c); err != nil {
+				return false
+			}
+			continue
+		}
+		if net.ParseIP(c) == nil {
+			return false
+		}
+	}
+	return true
 }
 
 func maskTokenKey(key string) string {
@@ -120,6 +157,24 @@ func (h *TokenHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Group:  group,
 		Status: "active",
 		Quota:  -1, // unlimited unless the account enforces one
+	}
+	if p.Models != nil {
+		if len(*p.Models) > 512 {
+			writeAPIError(w, http.StatusBadRequest, "models must be at most 512 characters")
+			return
+		}
+		tok.Models = normalizeCSV(*p.Models)
+	}
+	if p.Subnet != nil {
+		sub := normalizeCSV(*p.Subnet)
+		if sub != "" && !validSubnets(sub) {
+			writeAPIError(w, http.StatusBadRequest, "subnet must be IPv4/IPv6 addresses or CIDRs, comma-separated")
+			return
+		}
+		tok.Subnet = sub
+	}
+	if p.ExpiresDays != nil && *p.ExpiresDays > 0 {
+		tok.ExpiredAt = time.Now().AddDate(0, 0, *p.ExpiresDays)
 	}
 	if u.Quota != -1 {
 		tok.Quota = u.Quota
@@ -182,6 +237,28 @@ func (h *TokenHandler) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		updates["group"] = group
+	}
+	if p.Models != nil {
+		if len(*p.Models) > 512 {
+			writeAPIError(w, http.StatusBadRequest, "models must be at most 512 characters")
+			return
+		}
+		updates["models"] = normalizeCSV(*p.Models)
+	}
+	if p.Subnet != nil {
+		sub := normalizeCSV(*p.Subnet)
+		if sub != "" && !validSubnets(sub) {
+			writeAPIError(w, http.StatusBadRequest, "subnet must be IPv4/IPv6 addresses or CIDRs, comma-separated")
+			return
+		}
+		updates["subnet"] = sub
+	}
+	if p.ExpiresDays != nil {
+		if *p.ExpiresDays <= 0 {
+			updates["expired_at"] = time.Time{}
+		} else {
+			updates["expired_at"] = time.Now().AddDate(0, 0, *p.ExpiresDays)
+		}
 	}
 	if len(updates) > 0 {
 		if err := database.DB.Model(&tok).Updates(updates).Error; err != nil {

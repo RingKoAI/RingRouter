@@ -40,6 +40,10 @@ type Token struct {
 	Status    string    `json:"status" gorm:"size:16;default:active"`       // active, disabled
 	Quota     int64     `json:"quota" gorm:"default:-1"`                    // -1 = unlimited
 	UsedQuota int64     `json:"used_quota" gorm:"default:0"`
+	// Token-level restrictions (one-api semantics; empty = unrestricted).
+	Models    string    `json:"models" gorm:"size:512"`       // comma whitelist of model names
+	Subnet    string    `json:"subnet" gorm:"size:256"`       // comma CIDRs the caller IP must match
+	ExpiredAt time.Time `json:"expired_at" gorm:"index"`      // zero = never expires
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	User      User      `json:"-" gorm:"foreignKey:UserID"`

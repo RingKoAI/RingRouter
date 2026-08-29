@@ -32,17 +32,18 @@ func NewSettingsHandler(sealer SecretSealer) *SettingsHandler {
 
 type passkeyPayload struct {
 	Enabled *bool   `json:"enabled"`
-	RPID    *string `json:"rp_id"`     // e.g. example.com
+	RPID    *string `json:"rp_id"`      // e.g. example.com
 	Origins *string `json:"rp_origins"` // csv, e.g. https://example.com
 }
 
 type settingsPatch struct {
-	SiteName     *string         `json:"site_name,omitempty"`
-	Announcement *string         `json:"announcement,omitempty"`
-	UsageMode    *string         `json:"usage_mode,omitempty"`
-	SMTP         *smtpPayload    `json:"smtp,omitempty"`    // nil/omitted = leave SMTP alone
-	Passkey      *passkeyPayload `json:"passkey,omitempty"` // nil/omitted = leave passkey alone
-	PlazaPublic  *bool           `json:"plaza_public,omitempty"`
+	SiteName       *string         `json:"site_name,omitempty"`
+	Announcement   *string         `json:"announcement,omitempty"`
+	UsageMode      *string         `json:"usage_mode,omitempty"`
+	SMTP           *smtpPayload    `json:"smtp,omitempty"`    // nil/omitted = leave SMTP alone
+	Passkey        *passkeyPayload `json:"passkey,omitempty"` // nil/omitted = leave passkey alone
+	PlazaPublic    *bool           `json:"plaza_public,omitempty"`
+	SensitiveWords *string         `json:"sensitive_words,omitempty"` // csv; empty clears
 }
 
 /* ── Get ──────────────────────────────────────────────────────────────────── */
@@ -69,7 +70,8 @@ func (h *SettingsHandler) Get(w http.ResponseWriter, r *http.Request) {
 			"rp_id":      pk.RPID,
 			"rp_origins": strings.Join(pk.Origins, ","),
 		},
-		"plaza_public": setting.PlazaPublic(),
+		"plaza_public":    setting.PlazaPublic(),
+		"sensitive_words": setting.Get(setting.KeySensitiveWords),
 	})
 }
 
@@ -208,6 +210,20 @@ func (h *SettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		applied["passkey"] = true
+	}
+
+	// Sensitive-word blocklist (applies to gateway request text).
+	if req.SensitiveWords != nil {
+		v := strings.TrimSpace(*req.SensitiveWords)
+		if len(v) > 2048 {
+			writeAPIError(w, http.StatusBadRequest, "sensitive_words must be at most 2048 characters")
+			return
+		}
+		if err := setting.Set(setting.KeySensitiveWords, v); err != nil {
+			writeAPIError(w, http.StatusInternalServerError, "failed to save sensitive_words")
+			return
+		}
+		applied["sensitive_words"] = v
 	}
 
 	// Plaza visibility toggle.

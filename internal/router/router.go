@@ -28,7 +28,7 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	// Google Gemini (generateContent + streamGenerateContent)
 	api.HandleFunc("POST /v1beta/models/{model...}", proxy.ChatCompletion)
 
-	mux.Handle("/v1/", auth.Middleware(http.StripPrefix("/v1", api)))
+	mux.Handle("/v1/", middleware.RateLimitAPI()(auth.Middleware(http.StripPrefix("/v1", api))))
 
 	// Management plane (/api/*).
 	mgmt := http.NewServeMux()
@@ -38,14 +38,15 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	mgmt.HandleFunc("GET /setup/status", setupH.Status)
 	mgmt.HandleFunc("POST /setup/test-smtp", setupH.TestSMTP)
 	mgmt.HandleFunc("POST /setup/complete", setupH.Complete)
-	mgmt.HandleFunc("POST /auth/register", authH.Register)
-	mgmt.HandleFunc("POST /auth/login", authH.Login)
-	mgmt.HandleFunc("POST /auth/admin-key", authH.AdminKey)
+	critical := middleware.RateLimitCritical()
+	mgmt.Handle("POST /auth/register", critical(http.HandlerFunc(authH.Register)))
+	mgmt.Handle("POST /auth/login", critical(http.HandlerFunc(authH.Login)))
+	mgmt.Handle("POST /auth/admin-key", critical(http.HandlerFunc(authH.AdminKey)))
 	mgmt.HandleFunc("POST /auth/logout", authH.Logout)
-	mgmt.HandleFunc("POST /auth/code", authH.SendCode)
-	mgmt.HandleFunc("POST /auth/reset-password", authH.ResetPassword)
-	mgmt.HandleFunc("POST /auth/passkey/login/begin", passkeyH.LoginBegin)
-	mgmt.HandleFunc("POST /auth/passkey/login/finish", passkeyH.LoginFinish)
+	mgmt.Handle("POST /auth/code", critical(http.HandlerFunc(authH.SendCode)))
+	mgmt.Handle("POST /auth/reset-password", critical(http.HandlerFunc(authH.ResetPassword)))
+	mgmt.Handle("POST /auth/passkey/login/begin", critical(http.HandlerFunc(passkeyH.LoginBegin)))
+	mgmt.Handle("POST /auth/passkey/login/finish", critical(http.HandlerFunc(passkeyH.LoginFinish)))
 	mgmt.HandleFunc("GET /announcement", authH.Announcement)
 	// Session required.
 	mgmt.Handle("GET /auth/me", sess.Middleware(http.HandlerFunc(authH.Me)))
@@ -59,7 +60,7 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	mgmt.Handle("POST /auth/passkey/register/finish", sess.Middleware(http.HandlerFunc(passkeyH.RegisterFinish)))
 	mgmt.Handle("GET /auth/passkeys", sess.Middleware(http.HandlerFunc(passkeyH.List)))
 	mgmt.Handle("DELETE /auth/passkeys/{id}", sess.Middleware(http.HandlerFunc(passkeyH.Delete)))
-	mux.Handle("/api/", http.StripPrefix("/api", mgmt))
+	mux.Handle("/api/", middleware.RateLimitWeb()(http.StripPrefix("/api", mgmt)))
 
 	// Admin-only management plane (/api/admin/*).
 	admin := http.NewServeMux()

@@ -117,6 +117,8 @@ ADMIN_KEY=change-me ./ringrouter
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` | Fallback upstream when no DB channel matches (optional) | — |
 | `ANNOUNCEMENT` | Announcement seeded on first boot (optional) | — |
 | `TURNSTILE_SITEKEY` / `TURNSTILE_SECRET` | Cloudflare Turnstile | disabled |
+| `RATE_LIMIT_API` / `RATE_LIMIT_WEB` / `RATE_LIMIT_CRITICAL` | Per-IP sliding-window quotas (gateway / management / auth-sensitive endpoints, `0` disables) | `480` / `240` / `20` |
+| `CHANNEL_ALLOW_PRIVATE_ADDR` | Allow private addresses in channel base URLs; `false` enables SSRF hardening (rejects loopback/RFC1918/link-local) | `true` |
 
 > [!IMPORTANT]
 > Pin `JWT_SECRET` in production (the random default rotates per restart, which invalidates sealed channel keys), and serve over HTTPS.

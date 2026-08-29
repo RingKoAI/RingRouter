@@ -16,6 +16,7 @@ import (
 	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/model"
 	"github.com/RingKoAI/RingRouter/internal/provider"
+	"github.com/RingKoAI/RingRouter/internal/setting"
 )
 
 const maxBodyBytes = 16 << 20 // 16 MiB request cap
@@ -74,8 +75,21 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if !QuotaAvailable(middleware.GetUser(r.Context()), middleware.GetToken(r.Context())) {
+	tok := middleware.GetToken(r.Context())
+	if !QuotaAvailable(middleware.GetUser(r.Context()), tok) {
 		p.writeErr(w, codec, http.StatusTooManyRequests, "insufficient_quota", "account or API key quota exhausted")
+		return
+	}
+
+	// Token model whitelist (one-api semantics): empty = unrestricted.
+	if tok != nil && tok.Models != "" && !tokenAllowsModel(tok.Models, req.Model) {
+		p.writeErr(w, codec, http.StatusForbidden, "permission_error", "this API key is not allowed to use model "+req.Model)
+		return
+	}
+
+	// Operator-configured text blocklist.
+	if hit := hitsSensitiveWord(req); hit != "" {
+		p.writeErr(w, codec, http.StatusBadRequest, "invalid_request_error", "request rejected by content policy: "+hit)
 		return
 	}
 
@@ -198,6 +212,38 @@ func (p *Proxy) billStream(r *http.Request, modelName string, ch *model.Channel,
 	p.recordLogFull(r, modelName, chID, 0, 0, "success", "", time.Since(start), 0)
 }
 
+// tokenAllowsModel matches against the comma-separated whitelist (trimmed).
+func tokenAllowsModel(list, model string) bool {
+	for _, m := range strings.Split(list, ",") {
+		if strings.TrimSpace(m) == model {
+			return true
+		}
+	}
+	return false
+}
+
+// hitsSensitiveWord scans the request text (prompt + system) against the
+// operator blocklist. Returns the first hit, or "" when clean/disabled.
+func hitsSensitiveWord(req *dto.ChatRequest) string {
+	words := setting.SensitiveWords()
+	if len(words) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(req.Model)
+	for _, m := range req.Messages {
+		b.WriteByte('\n')
+		b.WriteString(m.Content)
+	}
+	text := strings.ToLower(b.String())
+	for _, w := range words {
+		if strings.Contains(text, w) {
+			return w
+		}
+	}
+	return ""
+}
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
@@ -211,8 +257,17 @@ func truncate(s string, n int) string {
 // upstream SSE untouched. Cross-format streams are consumed fully server-side
 // and re-emitted as a single data frame in the inbound format.
 func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbound.Codec, req *dto.ChatRequest) {
-	if !QuotaAvailable(middleware.GetUser(r.Context()), middleware.GetToken(r.Context())) {
+	tok := middleware.GetToken(r.Context())
+	if !QuotaAvailable(middleware.GetUser(r.Context()), tok) {
 		p.writeErr(w, codec, http.StatusTooManyRequests, "insufficient_quota", "account or API key quota exhausted")
+		return
+	}
+	if tok != nil && tok.Models != "" && !tokenAllowsModel(tok.Models, req.Model) {
+		p.writeErr(w, codec, http.StatusForbidden, "permission_error", "this API key is not allowed to use model "+req.Model)
+		return
+	}
+	if hit := hitsSensitiveWord(req); hit != "" {
+		p.writeErr(w, codec, http.StatusBadRequest, "invalid_request_error", "request rejected by content policy: "+hit)
 		return
 	}
 	start := time.Now()

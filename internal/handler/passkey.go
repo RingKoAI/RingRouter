@@ -84,7 +84,7 @@ func (u *webauthnUser) WebAuthnName() string {
 	}
 	return u.user.Username
 }
-func (u *webauthnUser) WebAuthnDisplayName() string { return u.user.DisplayName }
+func (u *webauthnUser) WebAuthnDisplayName() string                { return u.user.DisplayName }
 func (u *webauthnUser) WebAuthnCredentials() []webauthn.Credential { return u.creds }
 
 // loadCredentials converts stored passkeys into library credentials.

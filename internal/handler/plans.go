@@ -27,13 +27,13 @@ func NewPlanHandler() *PlanHandler {
 }
 
 type planPayload struct {
-	Name         *string  `json:"name"`
-	Description  *string  `json:"description"`
-	PriceCents   *int64   `json:"price_cents"`
-	Quota        *int64   `json:"quota"` // -1 = unlimited
-	Group        *string  `json:"group"`
-	DurationDays *int     `json:"duration_days"` // 0 = perpetual
-	Status       *string  `json:"status"`        // active, disabled
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	PriceCents   *int64  `json:"price_cents"`
+	Quota        *int64  `json:"quota"` // -1 = unlimited
+	Group        *string `json:"group"`
+	DurationDays *int    `json:"duration_days"` // 0 = perpetual
+	Status       *string `json:"status"`        // active, disabled
 }
 
 /* ── List ────────────────────────────────────────────────────────────────── */
