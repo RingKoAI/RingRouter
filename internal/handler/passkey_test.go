@@ -23,6 +23,7 @@ func setupPasskeyTest(t *testing.T) *PasskeyHandler {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect test db: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
 	t.Cleanup(func() {
 		database.Close()
 		database.DB = nil

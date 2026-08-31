@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,15 @@ func (m *Mailer) SendWith(cfg setting.SMTPConfig, to, subject, body string) erro
 	}
 	if cfg.Username != "" && cfg.Password == "" {
 		return fmt.Errorf("SMTP password is required when username is set")
+	}
+	// Header-injection guard: From/To travel into SMTP envelope commands and
+	// DATA headers. Reject anything that is not a single bare address, and
+	// flatten CR/LF in the subject (it is operator text, not an address).
+	if err := validateAddress(cfg.From); err != nil {
+		return fmt.Errorf("invalid sender address: %w", err)
+	}
+	if err := validateAddress(to); err != nil {
+		return fmt.Errorf("invalid recipient address: %w", err)
 	}
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
@@ -147,11 +157,28 @@ func SetDecryptor(f func(string) (string, error)) {
 	decrypt = f
 }
 
+// addrRe accepts exactly one bare email address — no display names, no
+// angle brackets, no whitespace, no CR/LF. Everything mailer.go emits into
+// envelope commands or headers must satisfy this shape.
+var addrRe = regexp.MustCompile(`^[^\s@,;:<>"']+@[^\s@,;:<>"']+\.[^\s@,;:<>"']+$`)
+
+// validateAddress enforces the single-address shape for header/emvelope use.
+func validateAddress(a string) error {
+	if a == "" || len(a) > 256 || !addrRe.MatchString(a) {
+		return fmt.Errorf("must be a single valid email address")
+	}
+	return nil
+}
+
+// headerSanitizer flattens CR/LF so no header value can be split into extra
+// headers (BCC injection, message forgery).
+var headerSanitizer = strings.NewReplacer("\r", " ", "\n", " ")
+
 func buildMessage(from, to, subject, body string) []byte {
 	var b strings.Builder
-	b.WriteString("From: " + from + "\r\n")
-	b.WriteString("To: " + to + "\r\n")
-	b.WriteString("Subject: " + subject + "\r\n")
+	b.WriteString("From: " + headerSanitizer.Replace(from) + "\r\n")
+	b.WriteString("To: " + headerSanitizer.Replace(to) + "\r\n")
+	b.WriteString("Subject: " + headerSanitizer.Replace(subject) + "\r\n")
 	b.WriteString("MIME-Version: 1.0\r\n")
 	b.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
 	b.WriteString("\r\n")

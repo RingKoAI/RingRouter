@@ -6,24 +6,37 @@ services:
       context: .
       dockerfile: Dockerfile
     image: ringrouter:latest
+    container_name: ringrouter
     restart: unless-stopped
+    # 仅绑定回环：外部必须经反向代理（TLS 终止）访问。
+    # 反代转发头默认即被信任（loopback）；直连暴露请改绑并设置 TRUSTED_PROXIES。
     ports:
-      - "${PORT:-3000}:3000"
+      - "127.0.0.1:${PORT:-3000}:3000"
+    volumes:
+      # SQLite 数据与自动生成的实例密钥（data/.instance_secret）持久化
+      - ./data:/app/data
     environment:
       PORT: 3000
       # 数据库（postgres）
       DB_TYPE: postgres
       DB_DSN: "postgres://${POSTGRES_USER:-ringrouter}:${POSTGRES_PASSWORD:-ringrouter}@postgres:5432/${POSTGRES_DB:-ringrouter}?sslmode=disable"
       # Redis（可选共享缓存；不设 REDIS_CONN_STRING 即禁用，one-api 语义）
-      REDIS_CONN_STRING: "${REDIS_CONN_STRING:-redis://redis:6379}"
-      # 认证
+      REDIS_CONN_STRING: "${REDIS_CONN_STRING:-redis://:${REDIS_PASSWORD:-}@redis:6379}"
+      # 认证（生产必须替换：openssl rand -hex 32）
       ADMIN_KEY: "${ADMIN_KEY:-ringrouter-admin-key}"
-      JWT_SECRET: "${JWT_SECRET:-change-me}"
+      JWT_SECRET: "${JWT_SECRET:-}"
+      # 信任来自 Docker 网关/内网反代的转发头；留空则仅信任 loopback
+      TRUSTED_PROXIES: "${TRUSTED_PROXIES:-}"
+      # SSRF 加固：拒绝渠道指向环回/私网地址（内网中继部署改为 true）
+      CHANNEL_ALLOW_PRIVATE_ADDR: "${CHANNEL_ALLOW_PRIVATE_ADDR:-true}"
       # Turnstile（可选）
       TURNSTILE_SITEKEY: "${TURNSTILE_SITEKEY:-}"
       TURNSTILE_SECRET: "${TURNSTILE_SECRET:-}"
       ANNOUNCEMENT: "${ANNOUNCEMENT:-}"
       TZ: "${TZ:-Asia/Shanghai}"
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,6 +51,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    container_name: ringrouter-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-ringrouter}"
@@ -45,31 +59,28 @@ services:
       POSTGRES_DB: "${POSTGRES_DB:-ringrouter}"
       TZ: "${TZ:-Asia/Shanghai}"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ringrouter} -d ${POSTGRES_DB:-ringrouter}"]
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # 仅本机访问（调试用）；不需要可整行删除
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
 
   redis:
     image: redis:7-alpine
+    container_name: ringrouter-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    # 设置密码：与 REDIS_CONN_STRING 中的 :password@ 保持一致
+    command: ["sh", "-c", "redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}"]
     environment:
       TZ: "${TZ:-Asia/Shanghai}"
     volumes:
-      - redisdata:/data
+      - ./data/redis:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 10
-    ports:
-      - "6379:6379"
-
-volumes:
-  pgdata:
-  redisdata:

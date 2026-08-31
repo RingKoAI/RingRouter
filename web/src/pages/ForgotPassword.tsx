@@ -79,7 +79,7 @@ export default function ForgotPassword() {
           </p>
           <Link
             to="/auth/login"
-            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline whitespace-nowrap"
           >
             <ArrowLeft size={14} />
             {t('auth.signIn')}
@@ -133,7 +133,7 @@ export default function ForgotPassword() {
                 sendCode()
               }}
               disabled={loading || !email.trim()}
-              className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2"
+              className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? t('auth.sending') : t('auth.sendCode')}
@@ -142,7 +142,7 @@ export default function ForgotPassword() {
             {sent && (
               <button
                 onClick={() => setStep('reset')}
-                className="w-full min-h-[44px] py-2.5 border border-input rounded-xl text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+                className="w-full min-h-[44px] py-2.5 border border-input rounded-xl text-sm font-medium hover:bg-muted transition-colors cursor-pointer whitespace-nowrap"
               >
                 {t('auth.nextStep')}
               </button>
@@ -220,7 +220,7 @@ export default function ForgotPassword() {
             <button
               type="submit"
               disabled={loading || !resetValid}
-              className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2"
+              className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? t('auth.resetting') : t('auth.resetPassword')}

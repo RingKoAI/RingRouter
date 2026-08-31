@@ -1,0 +1,7 @@
+data/
+.git/
+web/node_modules/
+web/dist/
+*.md
+RingRouter
+ringrouter

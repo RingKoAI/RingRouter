@@ -116,7 +116,8 @@
     "quickStart": "快速開始",
     "quickStartHint": "測試你的 {{site}} 實例",
     "quickStartDesc": "將 {{site}} 作為 OpenAI 相容的 Base URL 即可使用。",
-    "copy": "複製指令"
+    "copy": "複製指令",
+    "gatewayVersion": "閘道版本"
   },
   "layout": {
     "dashboard": "控制台",
@@ -178,7 +179,30 @@
       "total": "渠道數",
       "active": "活躍",
       "models": "模型數"
-    }
+    },
+    "refresh": "重新整理",
+    "created": "渠道已建立",
+    "saved": "渠道已儲存",
+    "saveFailed": "儲存失敗，請重試",
+    "deleted": "渠道已刪除",
+    "disabledToast": "渠道已停用",
+    "enabledToast": "渠道已啟用",
+    "editTitle": "編輯渠道",
+    "addTitle": "新增渠道",
+    "fName": "渠道名稱",
+    "fKey": "渠道 API Key（sk-…）",
+    "fKeyKeep": "留空保持現有 Key 不變",
+    "fModels": "模型列表，逗號分隔，如 gpt-4o,gpt-4o-mini",
+    "fPriority": "優先級（大者先用）",
+    "fMapping": "模型映射 JSON（可選）{\"客戶端\":\"上游\"}",
+    "statusActive": "啟用",
+    "statusDisabled": "停用",
+    "create": "建立",
+    "save": "儲存",
+    "deleteTitle": "刪除渠道",
+    "deleteDesc": "確定刪除渠道「{{name}}」？此操作不可復原。",
+    "officialDefault": "官方預設位址",
+    "defaultGroup": "預設"
   },
   "authIntro": {
     "headline": "一個閘道，<1>所有供應商</1>。",
@@ -299,7 +323,18 @@
     "errNetwork": "網路錯誤，請重試",
     "deleted": "使用者已刪除",
     "pwdReset": "密碼已重設",
-    "updated": "已更新"
+    "updated": "已更新",
+    "quotaUpdated": "配額已更新",
+    "invalidNumber": "請輸入有效數字",
+    "create": "新增使用者",
+    "createHint": "建立帳戶並分配角色與分組。",
+    "username": "使用者名稱",
+    "email": "信箱",
+    "memberRole": "一般成員",
+    "adminRole": "管理員",
+    "invalidUsername": "使用者名稱須為 3-32 位字母、數字、底線或連字號",
+    "invalidPassword": "密碼長度必須為 8-72 位",
+    "created": "使用者已建立"
   },
   "profile": {
     "title": "個人資料",
@@ -336,7 +371,11 @@
     "sbStatus": "狀態",
     "sbGroup": "分組",
     "sbAll": "全部",
-    "sbDisabled": "停用"
+    "sbDisabled": "停用",
+    "networkError": "網路錯誤，請重試",
+    "disabledToast": "密鑰已停用",
+    "enabledToast": "密鑰已啟用",
+    "deleted": "密鑰已刪除"
   },
   "logs": {
     "title": "使用日誌",
@@ -362,7 +401,8 @@
     "configured": "已設定",
     "notConfigured": "未設定",
     "plazaPublic": "模型廣場公開",
-    "plazaPublicDesc": "關閉後僅登入使用者可瀏覽 /models"
+    "plazaPublicDesc": "關閉後僅登入使用者可瀏覽 /models",
+    "loadFailed": "設定載入失敗"
   },
   "plans": {
     "title": "訂閱計畫",
@@ -400,7 +440,8 @@
     "priceUnit": "價格單位：美元 / 1M tokens",
     "fVendor": "廠商 (openai/deepseek/zhipu/moonshot…)",
     "fDesc": "描述",
-    "fCtx": "上下文視窗 (tokens)"
+    "fCtx": "上下文視窗 (tokens)",
+    "colActions": "操作"
   },
   "system": {
     "title": "系統資訊",
@@ -421,7 +462,8 @@
     "plans": "計畫",
     "subs": "訂閱",
     "requests": "呼叫量",
-    "moreHint": "請求量趨勢與模型分佈圖表將隨日誌資料累積逐步開放。"
+    "moreHint": "請求量趨勢與模型分佈圖表將隨日誌資料累積逐步開放。",
+    "loadFailed": "資料載入失敗，部分統計不可用"
   },
   "wallet": {
     "title": "錢包",
@@ -483,5 +525,27 @@
     "f3": "分組與訂閱：計畫分配即時生效，倍率計費，快照式訂閱生命週期。",
     "f4": "Passkey 通行密鑰免密登入，私鑰永不離開你的裝置。",
     "f5": "單二進位部署：前端嵌入，Docker Compose 一鍵啟動 PostgreSQL + Redis。"
+  },
+  "common": {
+    "comingSoon": "該功能即將上線",
+    "notFoundTitle": "頁面不存在",
+    "notFoundDesc": "你訪問的地址不存在或已被移動。",
+    "backHome": "返回首頁"
+  },
+  "footer": {
+    "tagline": "一個閘道，所有供應商 — 多協議 LLM API 閘道",
+    "rights": "版權所有。",
+    "attribution": "版權所有，由專案貢獻者設計與開發。",
+    "colAbout": "關於",
+    "colDocs": "文件",
+    "colRelated": "相關專案",
+    "linkAbout": "關於專案",
+    "linkReadme": "README",
+    "linkApi": "API 用法"
+  },
+  "subs": {
+    "stActive": "生效中",
+    "stExpired": "已過期",
+    "stDisabled": "已停用"
   }
 }

@@ -53,7 +53,7 @@ export default function ThemeLangActions({ compact = false }: { compact?: boolea
       {/* Theme cycle */}
       <button
         onClick={cycleTheme}
-        title={`${t('theme.' + theme)} → ${t('theme.' + nextTheme)}`}
+        title={`${t('theme.' + theme)} (${t('theme.' + nextTheme)})`}
         aria-label={t('theme.' + theme)}
         className="relative p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
       >

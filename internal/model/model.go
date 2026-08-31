@@ -32,18 +32,18 @@ type Session struct {
 
 // Token represents an API key belonging to a user.
 type Token struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	UserID    uint      `json:"user_id" gorm:"index"`
-	Key       string    `json:"key" gorm:"uniqueIndex;size:64"`
-	Name      string    `json:"name" gorm:"size:64"`
-	Group     string    `json:"group" gorm:"size:64;default:default;index"` // routing group; mirrors user.group at creation
-	Status    string    `json:"status" gorm:"size:16;default:active"`       // active, disabled
-	Quota     int64     `json:"quota" gorm:"default:-1"`                    // -1 = unlimited
-	UsedQuota int64     `json:"used_quota" gorm:"default:0"`
+	ID        uint   `json:"id" gorm:"primaryKey"`
+	UserID    uint   `json:"user_id" gorm:"index"`
+	Key       string `json:"key" gorm:"uniqueIndex;size:64"`
+	Name      string `json:"name" gorm:"size:64"`
+	Group     string `json:"group" gorm:"size:64;default:default;index"` // routing group; mirrors user.group at creation
+	Status    string `json:"status" gorm:"size:16;default:active"`       // active, disabled
+	Quota     int64  `json:"quota" gorm:"default:-1"`                    // -1 = unlimited
+	UsedQuota int64  `json:"used_quota" gorm:"default:0"`
 	// Token-level restrictions (one-api semantics; empty = unrestricted).
-	Models    string    `json:"models" gorm:"size:512"`       // comma whitelist of model names
-	Subnet    string    `json:"subnet" gorm:"size:256"`       // comma CIDRs the caller IP must match
-	ExpiredAt time.Time `json:"expired_at" gorm:"index"`      // zero = never expires
+	Models    string    `json:"models" gorm:"size:512"`  // comma whitelist of model names
+	Subnet    string    `json:"subnet" gorm:"size:256"`  // comma CIDRs the caller IP must match
+	ExpiredAt time.Time `json:"expired_at" gorm:"index"` // zero = never expires
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	User      User      `json:"-" gorm:"foreignKey:UserID"`
@@ -58,8 +58,8 @@ type Channel struct {
 	Name         string    `json:"name" gorm:"size:64"`
 	Protocol     string    `json:"protocol" gorm:"size:32;default:openai"` // openai | openai-compatible | anthropic | gemini
 	BaseURL      string    `json:"base_url" gorm:"size:256"`
-	APIKey       string    `json:"-" gorm:"size:512"`     // AES-GCM sealed at rest
-	Models       string    `json:"models" gorm:"type:text"` // comma-separated model list
+	APIKey       string    `json:"-" gorm:"size:512"`              // AES-GCM sealed at rest
+	Models       string    `json:"models" gorm:"type:text"`        // comma-separated model list
 	ModelMapping string    `json:"model_mapping" gorm:"type:text"` // JSON: {"client_model":"upstream_model"}
 	Group        string    `json:"group" gorm:"size:64;default:default;index"`
 	Status       string    `json:"status" gorm:"size:16;default:active"` // active, disabled
@@ -134,12 +134,12 @@ type Passkey struct {
 type ModelMeta struct {
 	ID            uint      `json:"id" gorm:"primaryKey"`
 	Name          string    `json:"name" gorm:"uniqueIndex;size:128"`
-	Vendor        string    `json:"vendor" gorm:"size:64"`  // deepseek, openai, zhipu, ...
+	Vendor        string    `json:"vendor" gorm:"size:64"` // deepseek, openai, zhipu, ...
 	Description   string    `json:"description" gorm:"size:512"`
-	InputPrice    float64   `json:"input_price"`            // $ / 1M tokens
-	OutputPrice   float64   `json:"output_price"`           // $ / 1M tokens
-	CachePrice    float64   `json:"cache_price"`            // $ / 1M cache-read tokens
-	ContextWindow int64     `json:"context_window"`         // tokens, 0 = unknown
+	InputPrice    float64   `json:"input_price"`                          // $ / 1M tokens
+	OutputPrice   float64   `json:"output_price"`                         // $ / 1M tokens
+	CachePrice    float64   `json:"cache_price"`                          // $ / 1M cache-read tokens
+	ContextWindow int64     `json:"context_window"`                       // tokens, 0 = unknown
 	Status        string    `json:"status" gorm:"size:16;default:active"` // active, hidden
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
@@ -152,10 +152,10 @@ type Plan struct {
 	ID           uint      `json:"id" gorm:"primaryKey"`
 	Name         string    `json:"name" gorm:"uniqueIndex;size:64"`
 	Description  string    `json:"description" gorm:"size:256"`
-	PriceCents   int64     `json:"price_cents" gorm:"default:0"`  // display-only, 0 = free
-	Quota        int64     `json:"quota" gorm:"default:0"`        // granted quota, -1 = unlimited
-	Group        string    `json:"group" gorm:"size:64;index"`    // routing group (group ratio applies)
-	DurationDays int       `json:"duration_days" gorm:"default:30"` // 0 = perpetual
+	PriceCents   int64     `json:"price_cents" gorm:"default:0"`         // display-only, 0 = free
+	Quota        int64     `json:"quota" gorm:"default:0"`               // granted quota, -1 = unlimited
+	Group        string    `json:"group" gorm:"size:64;index"`           // routing group (group ratio applies)
+	DurationDays int       `json:"duration_days" gorm:"default:30"`      // 0 = perpetual
 	Status       string    `json:"status" gorm:"size:16;default:active"` // active, disabled
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -168,10 +168,10 @@ type Subscription struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	UserID    uint      `json:"user_id" gorm:"index"`
 	PlanID    uint      `json:"plan_id" gorm:"index"`
-	PlanName  string    `json:"plan_name" gorm:"size:64"` // snapshot
-	Group     string    `json:"group" gorm:"size:64;index"` // snapshot
-	Quota     int64     `json:"quota"`                       // snapshot: granted quota (-1 = unlimited)
-	ExpiresAt time.Time `json:"expires_at" gorm:"index"`    // zero = perpetual
+	PlanName  string    `json:"plan_name" gorm:"size:64"`                   // snapshot
+	Group     string    `json:"group" gorm:"size:64;index"`                 // snapshot
+	Quota     int64     `json:"quota"`                                      // snapshot: granted quota (-1 = unlimited)
+	ExpiresAt time.Time `json:"expires_at" gorm:"index"`                    // zero = perpetual
 	Status    string    `json:"status" gorm:"size:16;default:active;index"` // active, expired, cancelled
 	CreatedAt time.Time `json:"created_at"`
 }

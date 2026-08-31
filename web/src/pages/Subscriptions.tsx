@@ -90,11 +90,11 @@ export default function Subscriptions() {
         </div>
         <div className="flex gap-2">
           <button onClick={() => setDialog({ kind: 'grant' })} disabled={plans.length === 0 || users.length === 0}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted disabled:opacity-50 cursor-pointer transition-colors">
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted disabled:opacity-50 cursor-pointer transition-colors whitespace-nowrap">
             <UserPlus size={15} /> {t('plans.grant')}
           </button>
           <button onClick={() => setDialog({ kind: 'plan' })}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark cursor-pointer transition-colors">
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark cursor-pointer transition-colors whitespace-nowrap">
             <Plus size={15} /> {t('plans.add')}
           </button>
         </div>
@@ -160,7 +160,7 @@ export default function Subscriptions() {
                     s.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     : s.status === 'expired' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                     : 'bg-muted text-muted-foreground'}`}>
-                    {s.status}
+                    {s.status === 'active' ? t('subs.stActive') : s.status === 'expired' ? t('subs.stExpired') : t('subs.stDisabled')}
                   </span>
                 </td>
               </tr>
@@ -194,7 +194,7 @@ export default function Subscriptions() {
                     onChange={(e) => setPf({ ...pf, days: e.target.value.replace(/\D/g, '') })} />
                 </div>
                 <button onClick={createPlan} disabled={busy || !pf.name.trim()}
-                  className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5">
+                  className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                   {busy ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />} {t('users.confirm')}
                 </button>
               </div>
@@ -209,7 +209,7 @@ export default function Subscriptions() {
                   {plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 <button onClick={grant} disabled={busy || !gf.userId || !gf.planId}
-                  className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5">
+                  className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                   {busy ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />} {t('users.confirm')}
                 </button>
               </div>

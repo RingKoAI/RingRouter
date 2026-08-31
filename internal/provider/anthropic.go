@@ -12,14 +12,14 @@ import (
 
 // anthropicRequest is the /v1/messages wire format.
 type anthropicRequest struct {
-	Model         string          `json:"model"`
-	MaxTokens     int             `json:"max_tokens"`
+	Model         string            `json:"model"`
+	MaxTokens     int               `json:"max_tokens"`
 	Messages      []anthropicOutMsg `json:"messages"`
-	System        string          `json:"system,omitempty"`
-	Stream        bool            `json:"stream,omitempty"`
-	Temperature   *float64        `json:"temperature,omitempty"`
-	TopP          *float64        `json:"top_p,omitempty"`
-	StopSequences []string        `json:"stop_sequences,omitempty"`
+	System        string            `json:"system,omitempty"`
+	Stream        bool              `json:"stream,omitempty"`
+	Temperature   *float64          `json:"temperature,omitempty"`
+	TopP          *float64          `json:"top_p,omitempty"`
+	StopSequences []string          `json:"stop_sequences,omitempty"`
 }
 
 type anthropicOutMsg struct {
@@ -28,10 +28,10 @@ type anthropicOutMsg struct {
 }
 
 type anthropicResponse struct {
-	ID           string `json:"id"`
-	Model        string `json:"model"`
-	StopReason   string `json:"stop_reason"`
-	Content      []struct {
+	ID         string `json:"id"`
+	Model      string `json:"model"`
+	StopReason string `json:"stop_reason"`
+	Content    []struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"content"`
@@ -110,9 +110,9 @@ func fromAnthropic(r *anthropicResponse) *dto.ChatResponse {
 		finish = r.StopReason
 	}
 	return &dto.ChatResponse{
-		ID:      r.ID,
-		Object:  "chat.completion",
-		Model:   r.Model,
+		ID:     r.ID,
+		Object: "chat.completion",
+		Model:  r.Model,
 		Choices: []dto.Choice{{
 			Index:        0,
 			Message:      dto.Message{Role: "assistant", Content: text},

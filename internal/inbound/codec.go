@@ -17,10 +17,10 @@ import (
 type Format string
 
 const (
-	FormatOpenAI      Format = "openai"
-	FormatResponses   Format = "responses"
-	FormatAnthropic   Format = "anthropic"
-	FormatGoogle      Format = "google"
+	FormatOpenAI    Format = "openai"
+	FormatResponses Format = "responses"
+	FormatAnthropic Format = "anthropic"
+	FormatGoogle    Format = "google"
 )
 
 // DetectFormat infers the inbound format from the request path.
@@ -198,16 +198,16 @@ func (anthropicCodec) EncodeChat(resp *dto.ChatResponse) ([]byte, error) {
 		Content string `json:"content"`
 	}
 	type aResp struct {
-		ID           string `json:"id"`
-		Type         string `json:"type"`
-		Role         string `json:"role"`
-		Model        string `json:"model"`
-		Content      []struct {
+		ID      string `json:"id"`
+		Type    string `json:"type"`
+		Role    string `json:"role"`
+		Model   string `json:"model"`
+		Content []struct {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
-		StopReason  string `json:"stop_reason,omitempty"`
-		Usage       struct {
+		StopReason string `json:"stop_reason,omitempty"`
+		Usage      struct {
 			InputTokens  int `json:"input_tokens"`
 			OutputTokens int `json:"output_tokens"`
 		} `json:"usage"`
@@ -357,9 +357,9 @@ func (googleCodec) EncodeChat(resp *dto.ChatResponse) ([]byte, error) {
 	}
 	type gResp struct {
 		Candidates []struct {
-			Content       gContent `json:"content"`
-			FinishReason  string   `json:"finishReason"`
-			Index         int      `json:"index"`
+			Content      gContent `json:"content"`
+			FinishReason string   `json:"finishReason"`
+			Index        int      `json:"index"`
 		} `json:"candidates"`
 		UsageMetadata struct {
 			PromptTokenCount     int `json:"promptTokenCount"`
@@ -378,9 +378,9 @@ func (googleCodec) EncodeChat(resp *dto.ChatResponse) ([]byte, error) {
 		}
 	}
 	out.Candidates = append(out.Candidates, struct {
-		Content       gContent `json:"content"`
-		FinishReason  string   `json:"finishReason"`
-		Index         int      `json:"index"`
+		Content      gContent `json:"content"`
+		FinishReason string   `json:"finishReason"`
+		Index        int      `json:"index"`
 	}{
 		Content:      gContent{Role: "model", Parts: []gPart{{Text: text}}},
 		FinishReason: finish,
@@ -497,10 +497,10 @@ func (responsesCodec) EncodeChat(resp *dto.ChatResponse) ([]byte, error) {
 	}
 
 	type rResp struct {
-		ID      string        `json:"id"`
-		Object  string        `json:"object"`
-		Output  []outputBlock `json:"output"`
-		Usage   struct {
+		ID     string        `json:"id"`
+		Object string        `json:"object"`
+		Output []outputBlock `json:"output"`
+		Usage  struct {
 			InputTokens  int `json:"input_tokens"`
 			OutputTokens int `json:"output_tokens"`
 			TotalTokens  int `json:"total_tokens"`

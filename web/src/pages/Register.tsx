@@ -165,7 +165,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading || !valid || (turnstileEnabled && !turnstileToken)}
-            className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2 anim-fade-up anim-delay-6"
+            className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2 anim-fade-up anim-delay-6 whitespace-nowrap"
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? t('auth.registering') : t('auth.register')}

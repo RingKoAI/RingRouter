@@ -60,7 +60,7 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { siteName } = useSite()
+  const { siteName, version } = useSite()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(collapseKey) === '1')
   const [annOpen, setAnnOpen] = useState(false)
@@ -93,7 +93,7 @@ export default function Layout() {
 
   /* ── Sidebar ── */
 
-  const renderNavItems = (items: NavItem[]) => (
+  const renderNavItems = (items: NavItem[], collapsedState: boolean) => (
     <ul className="space-y-0.5">
       {items.map((item) => {
         const active = isActive(item.path)
@@ -104,7 +104,7 @@ export default function Layout() {
               to={item.path}
               title={collapsedState ? t(item.labelKey) : undefined}
               className={`group relative flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-150 ${
-                collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2'
+                collapsedState ? 'justify-center px-0 py-2' : 'px-2.5 py-2'
               } ${
                 active
                   ? 'bg-primary/10 text-primary font-medium'
@@ -129,7 +129,9 @@ export default function Layout() {
     </ul>
   )
 
-  const Section = ({ labelKey, items, admin }: { labelKey: string; items: NavItem[]; admin?: boolean }) => (
+  const Section = ({ labelKey, items, admin, collapsedState }: {
+    labelKey: string; items: NavItem[]; admin?: boolean; collapsedState: boolean
+  }) => (
     <div>
       {collapsedState ? (
         <div className="mx-auto my-2 h-px w-6 bg-border" />
@@ -139,7 +141,7 @@ export default function Layout() {
           {t(labelKey)}
         </p>
       )}
-      {renderNavItems(items)}
+      {renderNavItems(items, collapsedState)}
     </div>
   )
 
@@ -155,7 +157,7 @@ export default function Layout() {
             <div className="flex items-center gap-1.5">
               <span className="font-semibold text-[15px] leading-tight tracking-tight truncate">{siteName}</span>
               <span className="px-1.5 py-px text-[9px] font-mono font-medium rounded bg-muted text-muted-foreground leading-4">
-                v0.1
+                v{version}
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">{t('layout.subtitle')}</p>
@@ -165,11 +167,11 @@ export default function Layout() {
 
       {/* Nav — slim scrollbar */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 rr-scroll-thin">
-        {renderNavItems(chatNav)}
-        <Section labelKey="nav.sectionGeneral" items={generalNav} />
-        <Section labelKey="nav.sectionPersonal" items={personalNav} />
+        {renderNavItems(chatNav, collapsedState)}
+        <Section labelKey="nav.sectionGeneral" items={generalNav} collapsedState={collapsedState} />
+        <Section labelKey="nav.sectionPersonal" items={personalNav} collapsedState={collapsedState} />
         {user?.role === 'admin' && (
-          <Section labelKey="nav.sectionAdmin" items={adminNav} admin />
+          <Section labelKey="nav.sectionAdmin" items={adminNav} admin collapsedState={collapsedState} />
         )}
       </nav>
 
@@ -262,7 +264,7 @@ export default function Layout() {
           <Link
             to="/"
             title={t('layout.backHome')}
-            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors whitespace-nowrap"
           >
             <Home size={14} />
             {t('nav.home')}

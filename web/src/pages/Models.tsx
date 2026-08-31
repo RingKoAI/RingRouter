@@ -16,6 +16,10 @@ const protoBadge: Record<string, string> = {
   google: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
 }
 
+const inputCls =
+  'w-full min-h-[40px] px-3 py-2 border border-input rounded-lg text-sm bg-background ' +
+  'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all'
+
 export default function Models() {
   const { t } = useTranslation()
   const [channels, setChannels] = useState<ChannelLite[]>([])
@@ -57,13 +61,15 @@ export default function Models() {
     } catch (e) { setMetaErr(e instanceof APIError ? e.message : '') } finally { setMetaBusy(false) }
   }
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
     Promise.all([
       api.get<{ channels: ChannelLite[] }>('/api/admin/channels'),
       api.get<{ groups: GroupInfo[] }>('/api/admin/groups'),
     ]).then(([c, g]) => { setChannels(c.channels ?? []); setGroups(g.groups ?? []) })
       .catch(() => {}).finally(() => setLoading(false))
-  }, [])
+  }
+  useEffect(load, [])
 
   const rows = channels
     .flatMap((c) => c.models.split(',').map((m) => m.trim()).filter(Boolean)
@@ -90,7 +96,7 @@ export default function Models() {
         <div className="flex items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('models.search')}
             className="min-h-[38px] px-3 border border-input rounded-lg text-sm bg-background" />
-          <button onClick={() => window.location.reload()} className="p-2 border border-border rounded-lg hover:bg-muted cursor-pointer">
+          <button onClick={load} className="p-2 border border-border rounded-lg hover:bg-muted cursor-pointer" title={t('channels.refresh')}>
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -114,13 +120,14 @@ export default function Models() {
               <th className="px-4 py-3 font-medium text-muted-foreground">{t('models.colProto')}</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">{t('models.colGroup')}</th>
               <th className="px-4 py-3 font-medium text-muted-foreground">{t('models.colMapping')}</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground text-right">{t('models.colActions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">…</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('models.empty')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{t('models.empty')}</td></tr>
             ) : rows.map((r, i) => (
               <tr key={`${r.channel.id}-${r.model}-${i}`} className="border-b border-border last:border-0 hover:bg-muted/30">
                 <td className="px-4 py-3 font-medium font-mono text-xs flex items-center gap-2">
@@ -165,7 +172,7 @@ export default function Models() {
               <input value={mf.context_window} onChange={(e) => setMf({ ...mf, context_window: e.target.value.replace(/\D/g, '') })} placeholder={t('models.fCtx')} inputMode="numeric" className={inputCls} />
               {metaErr && <p className="text-sm text-destructive">{metaErr}</p>}
               <button onClick={saveMeta} disabled={metaBusy}
-                className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5">
+                className="w-full min-h-[40px] text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                 <Check size={14} /> {t('users.confirm')}
               </button>
             </div>

@@ -119,6 +119,7 @@ func (h *GroupHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusInternalServerError, "failed to create group")
 		return
 	}
+	setting.InvalidateGroups() // hot-reload: next billing/validation read sees the new group
 	writeJSON(w, http.StatusCreated, map[string]interface{}{"group": g})
 }
 
@@ -211,7 +212,7 @@ func (h *GroupHandler) Update(w http.ResponseWriter, r *http.Request) {
 		// memory instead of REPLACE(), which would also mangle names that
 		// merely start with the old one (e.g. "old-vip").
 		var channels []model.Channel
-		if err := database.DB.Where(col+` LIKE ?`, "%"+oldName+"%").Find(&channels).Error; err == nil {
+		if err := database.DB.Where(col+` LIKE ?`, likePattern(oldName)).Find(&channels).Error; err == nil {
 			for _, ch := range channels {
 				groups := strings.Split(ch.Group, ",")
 				changed := false
@@ -230,6 +231,7 @@ func (h *GroupHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	database.DB.First(g, g.ID)
+	setting.InvalidateGroups() // hot-reload ratio/renames into billing immediately
 	writeJSON(w, http.StatusOK, map[string]interface{}{"group": g})
 }
 
@@ -260,10 +262,10 @@ func (h *GroupHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	// Channels may list the group inside a comma-separated multi-group
 	// value, so match on substring and confirm precisely in memory.
-	database.DB.Raw(`SELECT COUNT(*) FROM channels WHERE `+col+` LIKE ?`, "%"+g.Name+"%").Scan(&count)
+	database.DB.Raw(`SELECT COUNT(*) FROM channels WHERE `+col+` LIKE ?`, likePattern(g.Name)).Scan(&count)
 	if count > 0 {
 		var channels []model.Channel
-		database.DB.Where(col+` LIKE ?`, "%"+g.Name+"%").Find(&channels)
+		database.DB.Where(col+` LIKE ?`, likePattern(g.Name)).Find(&channels)
 		for _, ch := range channels {
 			for _, cg := range strings.Split(ch.Group, ",") {
 				if strings.TrimSpace(cg) == g.Name {
@@ -277,6 +279,7 @@ func (h *GroupHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusInternalServerError, "failed to delete group")
 		return
 	}
+	setting.InvalidateGroups()
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 }
 

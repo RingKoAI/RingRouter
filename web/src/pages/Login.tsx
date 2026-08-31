@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Eye, EyeOff, Fingerprint, KeyRound, X } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 import Turnstile from '../components/Turnstile'
 import { api, APIError } from '../lib/api'
-import { loginWithPasskey, registerPasskey } from '../lib/webauthn'
+import { loginWithPasskey, registerPasskey, isPasskeySupported } from '../lib/webauthn'
 import { useAuth } from '../contexts/AuthContext'
 import { useSite } from '../contexts/SiteContext'
 
@@ -28,6 +28,9 @@ export default function Login() {
   const [enrollName, setEnrollName] = useState('')
   const [enrollBusy, setEnrollBusy] = useState(false)
   const [enrollInfo, setEnrollInfo] = useState('')
+  const [passkeySupported, setPasskeySupported] = useState(false)
+
+  useEffect(() => { isPasskeySupported().then(setPasskeySupported) }, [])
 
   // Prefill the enrollment dialog with whatever account the user typed.
   const openEnroll = () => {
@@ -174,14 +177,14 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitDisabled}
-            className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? t('auth.signingIn') : t('auth.signIn')}
           </button>
 
           {/* Passkey (WebAuthn) login */}
-          {passkeyEnabled && (
+          {passkeyEnabled && passkeySupported && (
             <>
               <div className="flex items-center gap-3 pt-1">
                 <span className="h-px flex-1 bg-border" />
@@ -192,7 +195,7 @@ export default function Login() {
                 type="button"
                 onClick={passkeyLogin}
                 disabled={passkeyBusy || loading}
-                className="w-full min-h-[44px] py-2.5 border border-input rounded-xl text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
+                className="w-full min-h-[44px] py-2.5 border border-input rounded-xl text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 {passkeyBusy ? <Loader2 size={15} className="animate-spin" /> : <Fingerprint size={15} />}
                 {t('auth.passkeyLogin')}
@@ -200,7 +203,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={openEnroll}
-                className="w-full text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+                className="w-full text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
                 <KeyRound size={12} />
                 {t('auth.passkeyEnroll')}
@@ -232,7 +235,7 @@ export default function Login() {
                 {error && enrollOpen && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 {enrollInfo && <p className="text-sm text-emerald-600 dark:text-emerald-400">{enrollInfo}</p>}
                 <button onClick={enroll} disabled={enrollBusy || !enrollAccount.trim() || enrollPassword.length < 1}
-                  className="w-full min-h-[44px] text-sm bg-primary text-primary-foreground rounded-xl hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center justify-center gap-2">
+                  className="w-full min-h-[44px] text-sm bg-primary text-primary-foreground rounded-xl hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap">
                   {enrollBusy ? <Loader2 size={14} className="animate-spin" /> : <Fingerprint size={14} />}
                   {t('auth.passkeyEnrollAction')}
                 </button>

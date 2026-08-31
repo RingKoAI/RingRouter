@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  Zap, Search, Copy, Check, LayoutGrid, List, ChevronLeft, ChevronRight, X, Info,
+  Zap, Search, Copy, Check, LayoutGrid, List, ChevronLeft, ChevronRight, X, Info, Lock,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useSite } from '../contexts/SiteContext'
 import PublicNav from '../components/PublicNav'
+import SiteFooter from '../components/SiteFooter'
 
 interface PlazaGroup {
   name: string; ratio: number
@@ -179,7 +180,7 @@ export default function ModelsPlaza() {
           <div className="py-20 flex flex-col items-center text-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center"><Lock size={22} className="text-muted-foreground" /></div>
             <p className="text-sm text-muted-foreground">{t('plaza.locked')}</p>
-            <Link to="/auth/login" className="inline-flex items-center gap-1.5 min-h-[42px] px-5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-dark transition-colors cursor-pointer">
+            <Link to="/auth/login" className="inline-flex items-center gap-1.5 min-h-[42px] px-5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-dark transition-colors cursor-pointer whitespace-nowrap">
               {t('auth.signIn')}
             </Link>
           </div>
@@ -295,6 +296,8 @@ export default function ModelsPlaza() {
           </div>
         )}
       </main>
+
+      <SiteFooter />
 
       {/* Detail dialog */}
       {detail && (

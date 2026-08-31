@@ -8,7 +8,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/RingKoAI/RingRouter/internal/database"
+	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/model"
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 	"github.com/RingKoAI/RingRouter/internal/service"
 	"github.com/RingKoAI/RingRouter/internal/setting"
 )
@@ -67,8 +69,9 @@ type completeRequest struct {
 }
 
 type testSMTPRequest struct {
-	SMTP smtpPayload `json:"smtp"`
-	To   string      `json:"to"`
+	SMTP           smtpPayload `json:"smtp"`
+	To             string      `json:"to"`
+	TurnstileToken string      `json:"cf_turnstile_response"`
 }
 
 /* ── Status ──────────────────────────────────────────────────────────────── */
@@ -97,27 +100,72 @@ func (h *SetupHandler) needed() bool {
 
 // TestSMTP sends a probe message using the (unsaved) configuration submitted
 // by the wizard so the operator can verify credentials before committing.
+//
+// Trust model: the endpoint accepts either (a) a first-run wizard session —
+// setup still pending — or (b) an authenticated admin. Once the instance is
+// installed, anonymous callers are refused, which closes the SSRF port-scan
+// and open-relay vector. Recipient and sender are strictly validated (single
+// address, no CR/LF) and the host obeys the channel private-address policy.
 func (h *SetupHandler) TestSMTP(w http.ResponseWriter, r *http.Request) {
+	// Post-install: admin session required.
+	if !h.needed() {
+		u := middleware.GetUser(r.Context())
+		if u == nil || u.Role != "admin" {
+			writeAPIError(w, http.StatusForbidden, "administrator session required to test SMTP")
+			return
+		}
+	}
+
 	var req testSMTPRequest
 	if !decodeJSON(w, r, &req) {
 		return
 	}
 
-	cfg := req.SMTP
-	if cfg.Host == "" || cfg.Port <= 0 || cfg.Port > 65535 || cfg.From == "" || req.To == "" {
-		writeAPIError(w, http.StatusBadRequest, "host, port, from and to are required")
+	from := normalizeEmail(req.SMTP.From)
+	to := normalizeEmail(req.To)
+	if req.SMTP.Host == "" || req.SMTP.Port <= 0 || req.SMTP.Port > 65535 || from == "" || to == "" {
+		writeAPIError(w, http.StatusBadRequest, "host, port, from and to are required (from/to must be valid email addresses)")
+		return
+	}
+	if err := verifyTurnstile(r.Context(), req.TurnstileToken, extractIP(r)); err != nil {
+		writeAPIError(w, http.StatusForbidden, "turnstile verification failed")
+		return
+	}
+	// Same outbound policy as channel base URLs: reject private relay hosts
+	// when the operator has hardened the deployment.
+	if err := safenet.ValidateOutboundHost(strings.TrimSpace(req.SMTP.Host)); err != nil {
+		writeAPIError(w, http.StatusBadRequest, "private or loopback SMTP hosts are not allowed on this deployment")
 		return
 	}
 
+	cfg := req.SMTP
+	cfg.From = from
 	if err := h.mailer.SendWith(setting.SMTPConfig{
-		Host: cfg.Host, Port: cfg.Port,
+		Host: strings.TrimSpace(cfg.Host), Port: cfg.Port,
 		Username: cfg.Username, Password: cfg.Password, From: cfg.From,
-	}, req.To, "RingRouter SMTP test",
+	}, to, "RingRouter SMTP test",
 		"This is a test message from your RingRouter setup wizard.\n\nIf you received it, SMTP is working."); err != nil {
-		writeAPIError(w, http.StatusBadRequest, err.Error())
+		writeAPIError(w, http.StatusBadRequest, sanitizeSMTPError(err))
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
+}
+
+// smtpErrSanitizer keeps operator-facing failure messages single-line so raw
+// SMTP dialog frames cannot forge log lines or inject markup into responses.
+var smtpErrSanitizer = strings.NewReplacer("\r", " ", "\n", " ")
+
+// sanitizeSMTPError flattens and bounds a delivery error. Connection details
+// (resolved address, TLS internals) are dropped; the SMTP stage is kept so
+// the operator can still tell auth failures from unreachable hosts.
+func sanitizeSMTPError(err error) string {
+	msg := smtpErrSanitizer.Replace(err.Error())
+	if i := strings.Index(msg, ":"); i >= 0 && strings.HasPrefix(msg, "connect") {
+		msg = "connect failed (host unreachable or refused)"
+	} else if len(msg) > 200 {
+		msg = msg[:200]
+	}
+	return msg
 }
 
 /* ── Complete ────────────────────────────────────────────────────────────── */

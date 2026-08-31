@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Fingerprint, Plus, Trash2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { api, APIError } from '../lib/api'
-import { registerPasskey } from '../lib/webauthn'
+import { registerPasskey, isPasskeySupported } from '../lib/webauthn'
 
 interface Passkey {
   id: number
@@ -21,6 +21,9 @@ export default function Profile() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [passkeySupported, setPasskeySupported] = useState(false)
+
+  useEffect(() => { isPasskeySupported().then(setPasskeySupported) }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -89,7 +92,7 @@ export default function Profile() {
           />
           <button
             onClick={register}
-            disabled={registering}
+            disabled={registering || !passkeySupported}
             className="inline-flex items-center justify-center gap-2 min-h-[40px] px-4 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             {registering ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}

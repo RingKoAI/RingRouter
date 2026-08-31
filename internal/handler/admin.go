@@ -48,6 +48,108 @@ type adminResetPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+type createUserRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`  // admin | user (default user)
+	Group    string `json:"group"` // optional; defaults to "default"
+	Quota    *int64 `json:"quota"` // optional; default 0
+}
+
+// Create provisions an account directly from the console. Validation mirrors
+// self-registration (username shape, email shape, bcrypt password bounds,
+// case-insensitive uniqueness) with admin-only extras: role and quota.
+//
+// Authorization is enforced in three layers: the router mounts this handler
+// behind session auth + RequireAdmin; the handler itself re-verifies the
+// actor's role (defense in depth against future route mis-wiring); and every
+// input field is whitelist-validated before touching the database.
+func (h *AdminHandler) Create(w http.ResponseWriter, r *http.Request) {
+	if database.DB == nil {
+		writeAPIError(w, http.StatusServiceUnavailable, "database not available")
+		return
+	}
+	if actor := middleware.GetUser(r.Context()); actor == nil || actor.Role != "admin" ||
+		(actor.Status != "" && actor.Status != "active") {
+		writeAPIError(w, http.StatusForbidden, "admin privileges required")
+		return
+	}
+
+	var req createUserRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+
+	req.Username = strings.TrimSpace(req.Username)
+	req.Email = normalizeEmail(req.Email)
+	req.Group = strings.TrimSpace(req.Group)
+
+	if !usernameRe.MatchString(req.Username) {
+		writeAPIError(w, http.StatusBadRequest, "username must be 3-32 chars of letters, digits, - or _")
+		return
+	}
+	if req.Email == "" {
+		writeAPIError(w, http.StatusBadRequest, "a valid email address is required")
+		return
+	}
+	if len(req.Password) < minPasswordLen || len(req.Password) > maxPasswordLen {
+		writeAPIError(w, http.StatusBadRequest, "password must be 8-72 characters")
+		return
+	}
+	role := "user"
+	if req.Role != "" {
+		if req.Role != "admin" && req.Role != "user" {
+			writeAPIError(w, http.StatusBadRequest, "role must be admin or user")
+			return
+		}
+		role = req.Role
+	}
+	if req.Group == "" {
+		req.Group = "default"
+	}
+	if !setting.GroupExists(req.Group) {
+		writeAPIError(w, http.StatusBadRequest, "group does not exist")
+		return
+	}
+	quota := int64(0)
+	if req.Quota != nil {
+		if *req.Quota < -1 {
+			writeAPIError(w, http.StatusBadRequest, "quota must be >= 0, or -1 for unlimited")
+			return
+		}
+		quota = *req.Quota
+	}
+
+	// Case-insensitive uniqueness, same as self-registration.
+	if err := database.DB.Where("LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)",
+		req.Username, req.Email).First(&model.User{}).Error; err == nil {
+		writeAPIError(w, http.StatusConflict, "username or email already registered")
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, "failed to hash password")
+		return
+	}
+	user := model.User{
+		Username:    req.Username,
+		Email:       req.Email,
+		DisplayName: req.Username,
+		Password:    string(hash),
+		Role:        role,
+		Group:       req.Group,
+		Quota:       quota,
+		Status:      "active",
+	}
+	if err := database.DB.Create(&user).Error; err != nil {
+		writeAPIError(w, http.StatusInternalServerError, "failed to create user")
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]interface{}{"user": user})
+}
+
 // parseUserPage reads ?q=&page=&page_size= with sane bounds.
 func parseUserPage(r *http.Request) (q string, page, pageSize int) {
 	q = strings.TrimSpace(r.URL.Query().Get("q"))
@@ -75,7 +177,7 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	tx := database.DB.Model(&model.User{})
 	if q != "" {
-		like := "%" + q + "%"
+		like := likePattern(q)
 		tx = tx.Where("username LIKE ? OR email LIKE ? OR display_name LIKE ?", like, like, like)
 	}
 

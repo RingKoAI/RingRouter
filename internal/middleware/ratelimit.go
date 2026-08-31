@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 )
 
 /* ── Sliding-window store ────────────────────────────────────────────────── */
@@ -112,36 +114,10 @@ func rateLimit(mark string, max int, window time.Duration) func(http.Handler) ht
 	}
 }
 
-// clientIP resolves the caller address the same way the request logger does
-// (X-Forwarded-For → X-Real-IP → RemoteAddr), so limits survive proxies.
+// clientIP resolves the caller address through the shared trusted-proxy logic
+// (see internal/safenet): forwarded headers are honored only when the TCP
+// peer is a trusted proxy, so limits cannot be bypassed by rotating a forged
+// X-Forwarded-For.
 func clientIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		for i := 0; i < len(xff); i++ {
-			if xff[i] == ',' {
-				return trimSpaceStr(xff[:i])
-			}
-		}
-		return trimSpaceStr(xff)
-	}
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return trimSpaceStr(xri)
-	}
-	addr := r.RemoteAddr
-	for i := len(addr) - 1; i >= 0; i-- {
-		if addr[i] == ':' {
-			return addr[:i]
-		}
-	}
-	return addr
-}
-
-func trimSpaceStr(s string) string {
-	start, end := 0, len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t') {
-		start++
-	}
-	for end > start && (s[end-1] == ' ' || s[end-1] == '\t') {
-		end--
-	}
-	return s[start:end]
+	return safenet.ClientIP(r)
 }

@@ -3,9 +3,12 @@
 package setting
 
 import (
+	"context"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/RingKoAI/RingRouter/internal/database"
 	"github.com/RingKoAI/RingRouter/internal/model"
@@ -125,6 +128,32 @@ func Reset() {
 	mu.Lock()
 	defer mu.Unlock()
 	cache = make(map[string]string)
+}
+
+// autoRefreshInterval is how often a running instance re-reads the options
+// table. Local writes already update the cache (see Set); the refresher makes
+// edits made on another instance converge everywhere without restarts —
+// the same operational contract as one-api's option sync.
+const autoRefreshInterval = 30 * time.Second
+
+// StartAutoRefresh periodically reloads options from the database until ctx
+// is cancelled. Failures keep the last good snapshot; the next tick retries.
+func StartAutoRefresh(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(autoRefreshInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if err := LoadFromDB(); err != nil {
+					// Keep serving the last snapshot; surface why it stalled.
+					log.Printf("[setting] auto refresh failed (keeping last snapshot): %v", err)
+				}
+			}
+		}
+	}()
 }
 
 // Set persists an option and updates the cache. Empty value deletes the key.

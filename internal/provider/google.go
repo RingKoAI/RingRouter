@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
@@ -12,13 +13,13 @@ import (
 // ── Google (Gemini) adapter ──────────────────────────────────────────────────
 
 type googleGenRequest struct {
-	Contents          []googleContent `json:"contents"`
-	SystemInstruction *googleContent  `json:"systemInstruction,omitempty"`
+	Contents          []googleContent  `json:"contents"`
+	SystemInstruction *googleContent   `json:"systemInstruction,omitempty"`
 	GenerationConfig  *googleGenConfig `json:"generationConfig,omitempty"`
 }
 
 type googleContent struct {
-	Role  string      `json:"role,omitempty"`
+	Role  string       `json:"role,omitempty"`
 	Parts []googlePart `json:"parts"`
 }
 
@@ -122,9 +123,9 @@ func fromGoogle(r *googleGenResponse, requestedModel string) *dto.ChatResponse {
 		}
 	}
 	return &dto.ChatResponse{
-		ID:      "",
-		Object:  "chat.completion",
-		Model:   requestedModel,
+		ID:     "",
+		Object: "chat.completion",
+		Model:  requestedModel,
 		Choices: []dto.Choice{{
 			Index:        0,
 			Message:      dto.Message{Role: "assistant", Content: text},
@@ -139,7 +140,28 @@ func fromGoogle(r *googleGenResponse, requestedModel string) *dto.ChatResponse {
 }
 
 func (p *GoogleProvider) generateURL(model, method string) string {
-	return p.baseURL + "/v1beta/models/" + model + ":" + method
+	return p.baseURL + "/v1beta/models/" + sanitizeModelPath(model) + ":" + method
+}
+
+// modelSegmentRe is the per-path-segment whitelist for model identifiers sent
+// to Google endpoints. Keeping the model on a strict character set (no / ? #
+// % ..) prevents path traversal and query injection into the upstream URL.
+var modelSegmentRe = regexp.MustCompile(`^[A-Za-z0-9._~-]{1,128}$`)
+
+// sanitizeModelPath validates a client-supplied model name as one or more
+// safe URL path segments. Returns "unknown-model" when invalid; callers have
+// already routed by exact model match before this matters.
+func sanitizeModelPath(model string) string {
+	model = strings.TrimSpace(model)
+	if model == "" {
+		return "unknown-model"
+	}
+	for _, seg := range strings.Split(model, "/") {
+		if seg == "" || seg == "." || seg == ".." || !modelSegmentRe.MatchString(seg) {
+			return "unknown-model"
+		}
+	}
+	return model
 }
 
 func (p *GoogleProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.ChatResponse, error) {

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api } from '../lib/api'
+import { api, onUnauthorized } from '../lib/api'
 
 export interface AuthUser {
   id: number
@@ -8,6 +8,7 @@ export interface AuthUser {
   display_name: string
   role: string
   quota: number
+  group?: string
 }
 
 interface AuthContextValue {
@@ -50,6 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  // Any 401 from the management API means the session is gone: drop the
+  // user so route guards redirect to login instead of empty-state limbo.
+  useEffect(() => {
+    onUnauthorized(() => setUser(null))
+    return () => onUnauthorized(null)
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, refresh, logout }}>

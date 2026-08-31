@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { api, APIError } from '../../lib/api'
 
 export interface User {
@@ -19,6 +20,7 @@ export interface Pagination { page: number; page_size: number; total: number }
 
 export type UserDialog =
   | { kind: 'none' }
+  | { kind: 'create' }
   | { kind: 'password'; user: User }
   | { kind: 'quota'; user: User }
   | { kind: 'delete'; user: User }
@@ -28,6 +30,7 @@ export type UserDialog =
  * password mutations. Errors toast; success feedback supplied by callers.
  */
 export function useUsers() {
+  const { t } = useTranslation()
   const [users, setUsers] = useState<User[]>([])
   const [page, setPage] = useState<Pagination>({ page: 1, page_size: 20, total: 0 })
   const [loading, setLoading] = useState(true)
@@ -61,7 +64,7 @@ export function useUsers() {
     setBusyId(user.id)
     try {
       await fn()
-      toast.success('Updated')
+      toast.success(t('users.updated'))
     } catch (e) {
       if (e instanceof APIError) toast.error(e.message)
     } finally {

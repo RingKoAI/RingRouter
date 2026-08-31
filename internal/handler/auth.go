@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/RingKoAI/RingRouter/internal/database"
 	"github.com/RingKoAI/RingRouter/internal/middleware"
 	"github.com/RingKoAI/RingRouter/internal/model"
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 	"github.com/RingKoAI/RingRouter/internal/setting"
 	"github.com/RingKoAI/RingRouter/internal/turnstile"
 )
@@ -159,7 +162,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Quota:       0,
 	}
 
-	if err := database.DB.Where("username = ? OR email = ?", req.Username, req.Email).First(&model.User{}).Error; err == nil {
+	// Usernames and emails are matched case-insensitively: "Admin" and
+	// "admin" are the same identity (emails are additionally normalized to
+	// lower case at rest). The regex still governs the display shape.
+	if err := database.DB.Where("LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)",
+		req.Username, req.Email).First(&model.User{}).Error; err == nil {
 		writeAPIError(w, http.StatusConflict, "username or email already registered")
 		return
 	}
@@ -168,7 +175,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.startSession(w, &user)
+	h.startSession(w, r, &user)
 	writeJSON(w, http.StatusCreated, map[string]interface{}{"user": user})
 }
 
@@ -196,7 +203,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user model.User
-	err := database.DB.Where("username = ? OR email = ?", account, strings.ToLower(account)).First(&user).Error
+	// Case-insensitive account lookup: usernames are unique ignoring case,
+	// emails are stored lower-cased.
+	err := database.DB.Where("LOWER(username) = LOWER(?) OR email = ?",
+		account, strings.ToLower(account)).First(&user).Error
 	if err != nil {
 		// Constant-ish work to avoid user-enumeration timing signal.
 		bcrypt.CompareHashAndPassword([]byte("$2a$10$7EqJtq98hPqEX7fNZaFWoOhi5B0G1S3kAxKq0mMNrXYvJrOQzCkS"), []byte(req.Password))
@@ -216,7 +226,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.startSession(w, &user)
+	h.startSession(w, r, &user)
 	writeJSON(w, http.StatusOK, map[string]interface{}{"user": user})
 }
 
@@ -237,13 +247,13 @@ func (h *AuthHandler) AdminKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Key == "" || req.Key != h.adminKey {
+	if req.Key == "" || subtle.ConstantTimeCompare([]byte(req.Key), []byte(h.adminKey)) != 1 {
 		writeAPIError(w, http.StatusUnauthorized, "invalid admin key")
 		return
 	}
 
 	// Bootstrap sessions use UserID 0 (virtual admin, no DB record).
-	h.startSession(w, &model.User{ID: 0, Username: "admin", Role: "admin", Quota: -1, Status: "active"})
+	h.startSession(w, r, &model.User{ID: 0, Username: "admin", Role: "admin", Quota: -1, Status: "active"})
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"user": map[string]interface{}{"id": 0, "username": "admin", "role": "admin"},
 	})
@@ -494,26 +504,15 @@ func normalizeEmail(raw string) string {
 	return e
 }
 
-// extractIP extracts the client IP from X-Forwarded-For or RemoteAddr.
+// extractIP resolves the client address through the shared trusted-proxy
+// logic (internal/safenet): forwarded headers are honored only when the TCP
+// peer is a trusted proxy (loopback by default; TRUSTED_PROXIES to extend).
 func extractIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		if i := strings.IndexByte(xff, ','); i > 0 {
-			return strings.TrimSpace(xff[:i])
-		}
-		return strings.TrimSpace(xff)
-	}
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return strings.TrimSpace(xri)
-	}
-	addr := r.RemoteAddr
-	if i := strings.LastIndex(addr, ":"); i > 0 {
-		return addr[:i]
-	}
-	return addr
+	return safenet.ClientIP(r)
 }
 
 // startSession creates a DB-backed session and sets the cookie.
-func (h *AuthHandler) startSession(w http.ResponseWriter, u *model.User) {
+func (h *AuthHandler) startSession(w http.ResponseWriter, r *http.Request, u *model.User) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, "failed to create session")
@@ -540,15 +539,29 @@ func (h *AuthHandler) startSession(w http.ResponseWriter, u *model.User) {
 		MaxAge:   int(sessionTTL.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   requestIsHTTPS(r),
 	})
 }
 
-// decodeJSON decodes a JSON body, rejecting oversized or malformed payloads.
+// requestIsHTTPS reports whether the connection reached the server over TLS,
+// either terminated locally or by a proxy that forwarded the scheme. A forged
+// X-Forwarded-Proto can only force the Secure attribute on, which fails safe.
+func requestIsHTTPS(r *http.Request) bool {
+	return r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
+// decodeJSON decodes a JSON body, rejecting oversized payloads, malformed
+// documents, and trailing non-whitespace content after the first value (which
+// would otherwise let smuggled second documents slip through unnoticed).
 func decodeJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MiB cap for auth payloads
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(v); err != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid JSON body")
+		return false
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		writeAPIError(w, http.StatusBadRequest, "invalid JSON body: unexpected trailing data")
 		return false
 	}
 	return true

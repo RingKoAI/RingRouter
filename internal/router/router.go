@@ -28,7 +28,8 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	// Google Gemini (generateContent + streamGenerateContent)
 	api.HandleFunc("POST /v1beta/models/{model...}", proxy.ChatCompletion)
 
-	mux.Handle("/v1/", middleware.RateLimitAPI()(auth.Middleware(http.StripPrefix("/v1", api))))
+	mux.Handle("/v1/", middleware.RateLimitAPI()(
+		middleware.CORS(auth.Middleware(http.StripPrefix("/v1", api)))))
 
 	// Management plane (/api/*).
 	mgmt := http.NewServeMux()
@@ -36,9 +37,11 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	mgmt.HandleFunc("GET /status", statusH.Status)
 	mgmt.Handle("GET /plaza", sess.OptionalSession(http.HandlerFunc(statusH.Plaza)))
 	mgmt.HandleFunc("GET /setup/status", setupH.Status)
-	mgmt.HandleFunc("POST /setup/test-smtp", setupH.TestSMTP)
-	mgmt.HandleFunc("POST /setup/complete", setupH.Complete)
 	critical := middleware.RateLimitCritical()
+	// SMTP probing is sensitive: tight critical-tier budget, and the handler
+	// itself requires either a pending first-run setup or an admin session.
+	mgmt.Handle("POST /setup/test-smtp", critical(sess.OptionalSession(http.HandlerFunc(setupH.TestSMTP))))
+	mgmt.HandleFunc("POST /setup/complete", setupH.Complete)
 	mgmt.Handle("POST /auth/register", critical(http.HandlerFunc(authH.Register)))
 	mgmt.Handle("POST /auth/login", critical(http.HandlerFunc(authH.Login)))
 	mgmt.Handle("POST /auth/admin-key", critical(http.HandlerFunc(authH.AdminKey)))
@@ -65,6 +68,7 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	// Admin-only management plane (/api/admin/*).
 	admin := http.NewServeMux()
 	admin.HandleFunc("GET /users", adminH.ListUsers)
+	admin.HandleFunc("POST /users", adminH.Create)
 	admin.HandleFunc("DELETE /users/{id}", adminH.Delete)
 	admin.HandleFunc("PUT /users/{id}/role", adminH.UpdateRole)
 	admin.HandleFunc("PUT /users/{id}/status", adminH.UpdateStatus)
@@ -106,6 +110,8 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	mux.Handle("/icons.svg", fileServer)
 
 	// SPA fallback: index.html for everything that is not an API path.
+	// Served with no-cache so clients pick up new asset hashes immediately
+	// after an upgrade instead of booting a stale bundle.
 	indexHTML, err := fs.ReadFile(frontend, "index.html")
 	spaHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
@@ -113,6 +119,7 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
 		w.Write(indexHTML)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -123,10 +130,11 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 		spaHandler.ServeHTTP(w, r)
 	})
 
-	// Global middleware
+	// Global middleware: security headers on every response, request logging,
+	// and CORS confined to the gateway surface (/v1/*, applied above).
 	var h http.Handler = mux
 	h = middleware.Logging(h)
-	h = middleware.CORS(h)
+	h = middleware.SecureHeaders(h)
 
 	return h
 }

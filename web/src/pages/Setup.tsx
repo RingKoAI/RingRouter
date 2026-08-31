@@ -24,17 +24,17 @@ interface SMTPForm {
 
 const emptySMTP: SMTPForm = { host: '', port: '', username: '', password: '', from: '', testTo: '' }
 
-const usageModes: { value: UsageMode; icon: typeof Users; titleKey: string; descKey: string }[] = [
-  { value: 'external', icon: Users, titleKey: 'setup.mode.external.title', descKey: 'setup.mode.external.desc' },
-  { value: 'self', icon: Server, titleKey: 'setup.mode.self.title', descKey: 'setup.mode.self.desc' },
-  { value: 'demo', icon: Gift, titleKey: 'setup.mode.demo.title', descKey: 'setup.mode.demo.desc' },
+const usageModes: { value: UsageMode; icon: typeof Users; titleKey: string; descKey: string; tint: string; chip: string }[] = [
+  { value: 'external', icon: Users, titleKey: 'setup.mode.external.title', descKey: 'setup.mode.external.desc', tint: 'text-sky-500', chip: 'bg-sky-500/10' },
+  { value: 'self', icon: Server, titleKey: 'setup.mode.self.title', descKey: 'setup.mode.self.desc', tint: 'text-emerald-500', chip: 'bg-emerald-500/10' },
+  { value: 'demo', icon: Gift, titleKey: 'setup.mode.demo.title', descKey: 'setup.mode.demo.desc', tint: 'text-violet-500', chip: 'bg-violet-500/10' },
 ]
 
 const stepMeta = [
-  { icon: User, labelKey: 'setup.steps.admin' },
-  { icon: Mail, labelKey: 'setup.steps.smtp' },
-  { icon: Fingerprint, labelKey: 'setup.steps.passkey' },
-  { icon: Rocket, labelKey: 'setup.steps.mode' },
+  { icon: User, labelKey: 'setup.steps.admin', tint: 'text-sky-500' },
+  { icon: Mail, labelKey: 'setup.steps.smtp', tint: 'text-amber-500' },
+  { icon: Fingerprint, labelKey: 'setup.steps.passkey', tint: 'text-violet-500' },
+  { icon: Rocket, labelKey: 'setup.steps.mode', tint: 'text-emerald-500' },
 ] as const
 
 export default function Setup() {
@@ -197,7 +197,9 @@ export default function Setup() {
                         : 'bg-card border-border text-muted-foreground'
                   }`}
                 >
-                  {done ? <Check size={14} strokeWidth={2.5} /> : <Icon size={14} strokeWidth={2} />}
+                  {done
+                    ? <Check size={14} strokeWidth={2.5} />
+                    : <Icon size={14} strokeWidth={2} className={active ? '' : s.tint} />}
                 </div>
                 <span
                   className={`text-xs hidden sm:block ${
@@ -303,7 +305,7 @@ export default function Setup() {
                       type="button"
                       onClick={testSMTP}
                       disabled={!canTest}
-                      className="shrink-0 min-h-[44px] px-3.5 py-2 border border-input rounded-xl text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors press disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                      className="shrink-0 min-h-[44px] px-3.5 py-2 border border-input rounded-xl text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors press disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
                     >
                       {testing && <Loader2 size={13} className="animate-spin" />}
                       {t('setup.smtp.test')}
@@ -361,7 +363,7 @@ export default function Setup() {
               <h2 className="font-semibold mb-1">{t('setup.mode.title')}</h2>
               <p className="text-[13px] text-muted-foreground">{t('setup.mode.desc')}</p>
             </div>
-            {usageModes.map(({ value, icon: Icon, titleKey, descKey }) => (
+            {usageModes.map(({ value, icon: Icon, titleKey, descKey, tint, chip }) => (
               <button
                 key={value}
                 onClick={() => setMode(value)}
@@ -373,7 +375,7 @@ export default function Setup() {
               >
                 <div
                   className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                    mode === value ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                    mode === value ? 'bg-primary/15 text-primary' : `${chip} ${tint}`
                   }`}
                 >
                   <Icon size={17} strokeWidth={2} />
@@ -399,7 +401,7 @@ export default function Setup() {
           {step > 0 && (
             <button
               onClick={() => { setStep((s) => (s - 1) as Step); setError('') }}
-              className="px-4 py-2.5 min-h-[44px] border border-input rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors press cursor-pointer inline-flex items-center gap-1.5"
+              className="px-4 py-2.5 min-h-[44px] border border-input rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors press cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {t('setup.back')}
@@ -415,7 +417,7 @@ export default function Setup() {
           {step < 3 ? (
             <button
               onClick={next}
-              className="px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors press cursor-pointer inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors press cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               {t('setup.next')}
               <ArrowRight size={14} strokeWidth={2} />
@@ -424,7 +426,7 @@ export default function Setup() {
             <button
               onClick={complete}
               disabled={submitting}
-              className="px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors press cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
               {t('setup.finish')}

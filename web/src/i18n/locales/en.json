@@ -116,7 +116,8 @@
     "quickStart": "Quick Start",
     "quickStartHint": "Test your {{site}} instance",
     "quickStartDesc": "Point any OpenAI-compatible client at the Base URL above.",
-    "copy": "Copy"
+    "copy": "Copy",
+    "gatewayVersion": "Gateway version"
   },
   "layout": {
     "dashboard": "Dashboard",
@@ -178,7 +179,30 @@
       "total": "Channels",
       "active": "Active",
       "models": "Models"
-    }
+    },
+    "refresh": "Refresh",
+    "created": "Channel created",
+    "saved": "Channel saved",
+    "saveFailed": "Save failed, please retry",
+    "deleted": "Channel deleted",
+    "disabledToast": "Channel disabled",
+    "enabledToast": "Channel enabled",
+    "editTitle": "Edit channel",
+    "addTitle": "Add channel",
+    "fName": "Channel name",
+    "fKey": "Channel API key (sk-…)",
+    "fKeyKeep": "Leave blank to keep the current key",
+    "fModels": "Models, comma-separated, e.g. gpt-4o,gpt-4o-mini",
+    "fPriority": "Priority (higher first)",
+    "fMapping": "Model mapping JSON (optional) {\"client\":\"upstream\"}",
+    "statusActive": "Active",
+    "statusDisabled": "Disabled",
+    "create": "Create",
+    "save": "Save",
+    "deleteTitle": "Delete channel",
+    "deleteDesc": "Delete channel \"{{name}}\"? This cannot be undone.",
+    "officialDefault": "Official default endpoint",
+    "defaultGroup": "default"
   },
   "authIntro": {
     "headline": "One gateway, <1>every provider</1>.",
@@ -299,7 +323,18 @@
     "errNetwork": "Network error, please retry",
     "deleted": "User deleted",
     "pwdReset": "Password reset",
-    "updated": "Updated"
+    "updated": "Updated",
+    "quotaUpdated": "Quota updated",
+    "invalidNumber": "Enter a valid number",
+    "create": "Create user",
+    "createHint": "Create an account and assign its role and group.",
+    "username": "Username",
+    "email": "Email",
+    "memberRole": "Member",
+    "adminRole": "Administrator",
+    "invalidUsername": "Username must be 3-32 letters, digits, underscores or hyphens",
+    "invalidPassword": "Password must be 8-72 characters",
+    "created": "User created"
   },
   "profile": {
     "title": "Profile",
@@ -336,7 +371,11 @@
     "sbStatus": "Status",
     "sbGroup": "Group",
     "sbAll": "All",
-    "sbDisabled": "Disabled"
+    "sbDisabled": "Disabled",
+    "networkError": "Network error, please retry",
+    "disabledToast": "Key disabled",
+    "enabledToast": "Key enabled",
+    "deleted": "Key deleted"
   },
   "logs": {
     "title": "Usage Logs",
@@ -362,7 +401,8 @@
     "configured": "Configured",
     "notConfigured": "Not configured",
     "plazaPublic": "Public model plaza",
-    "plazaPublicDesc": "Turn off to require sign-in at /models"
+    "plazaPublicDesc": "Turn off to require sign-in at /models",
+    "loadFailed": "Failed to load settings"
   },
   "plans": {
     "title": "Subscription Plans",
@@ -400,7 +440,8 @@
     "priceUnit": "Prices in USD / 1M tokens",
     "fVendor": "Vendor (openai/deepseek/zhipu/moonshot…)",
     "fDesc": "Description",
-    "fCtx": "Context window (tokens)"
+    "fCtx": "Context window (tokens)",
+    "colActions": "Actions"
   },
   "system": {
     "title": "System Info",
@@ -421,7 +462,8 @@
     "plans": "Plans",
     "subs": "Subscriptions",
     "requests": "Requests",
-    "moreHint": "Request trends and model distribution charts will arrive as log data accumulates."
+    "moreHint": "Request trends and model distribution charts will arrive as log data accumulates.",
+    "loadFailed": "Failed to load, some stats unavailable"
   },
   "wallet": {
     "title": "Wallet",
@@ -483,5 +525,27 @@
     "f3": "Groups & subscriptions: grants apply instantly, ratio-based billing, snapshot subscription lifecycle.",
     "f4": "Passkey passwordless sign-in — private keys never leave your device.",
     "f5": "Single-binary deploy: embedded frontend, one-command Docker Compose with PostgreSQL + Redis."
+  },
+  "common": {
+    "comingSoon": "Coming soon",
+    "notFoundTitle": "Page not found",
+    "notFoundDesc": "The address you visited does not exist or has moved.",
+    "backHome": "Back to home"
+  },
+  "footer": {
+    "tagline": "One gateway, every provider — multi-protocol LLM API gateway",
+    "rights": "All rights reserved.",
+    "attribution": "Built by the project contributors.",
+    "colAbout": "About",
+    "colDocs": "Docs",
+    "colRelated": "Related",
+    "linkAbout": "About the project",
+    "linkReadme": "README",
+    "linkApi": "API usage"
+  },
+  "subs": {
+    "stActive": "Active",
+    "stExpired": "Expired",
+    "stDisabled": "Disabled"
   }
 }

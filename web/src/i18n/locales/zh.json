@@ -116,7 +116,8 @@
     "quickStart": "快速开始",
     "quickStartHint": "测试你的 {{site}} 实例",
     "quickStartDesc": "将 {{site}} 作为 OpenAI 兼容的 Base URL 即可使用。",
-    "copy": "复制命令"
+    "copy": "复制命令",
+    "gatewayVersion": "网关版本"
   },
   "layout": {
     "dashboard": "控制台",
@@ -178,7 +179,30 @@
       "total": "渠道数",
       "active": "活跃",
       "models": "模型数"
-    }
+    },
+    "refresh": "刷新",
+    "created": "渠道已创建",
+    "saved": "渠道已保存",
+    "saveFailed": "保存失败，请重试",
+    "deleted": "渠道已删除",
+    "disabledToast": "渠道已禁用",
+    "enabledToast": "渠道已启用",
+    "editTitle": "编辑渠道",
+    "addTitle": "添加渠道",
+    "fName": "渠道名称",
+    "fKey": "渠道 API Key（sk-…）",
+    "fKeyKeep": "留空保持现有 Key 不变",
+    "fModels": "模型列表，逗号分隔，如 gpt-4o,gpt-4o-mini",
+    "fPriority": "优先级（大者先用）",
+    "fMapping": "模型映射 JSON（可选）{\"客户端\":\"上游\"}",
+    "statusActive": "启用",
+    "statusDisabled": "禁用",
+    "create": "创建",
+    "save": "保存",
+    "deleteTitle": "删除渠道",
+    "deleteDesc": "确定删除渠道「{{name}}」？该操作不可撤销。",
+    "officialDefault": "官方默认地址",
+    "defaultGroup": "默认"
   },
   "authIntro": {
     "headline": "一个网关，<1>所有供应商</1>。",
@@ -299,7 +323,18 @@
     "errNetwork": "网络错误，请重试",
     "deleted": "用户已删除",
     "pwdReset": "密码已重置",
-    "updated": "已更新"
+    "updated": "已更新",
+    "quotaUpdated": "配额已更新",
+    "invalidNumber": "请输入有效数字",
+    "create": "新建用户",
+    "createHint": "创建账户并分配角色与分组。",
+    "username": "用户名",
+    "email": "邮箱",
+    "memberRole": "普通成员",
+    "adminRole": "管理员",
+    "invalidUsername": "用户名须为 3-32 位字母、数字、下划线或短横线",
+    "invalidPassword": "密码长度必须为 8-72 位",
+    "created": "用户已创建"
   },
   "profile": {
     "title": "个人资料",
@@ -336,7 +371,11 @@
     "sbStatus": "状态",
     "sbGroup": "分组",
     "sbAll": "全部",
-    "sbDisabled": "禁用"
+    "sbDisabled": "禁用",
+    "networkError": "网络错误，请重试",
+    "disabledToast": "密钥已禁用",
+    "enabledToast": "密钥已启用",
+    "deleted": "密钥已删除"
   },
   "logs": {
     "title": "使用日志",
@@ -362,7 +401,8 @@
     "configured": "已配置",
     "notConfigured": "未配置",
     "plazaPublic": "模型广场公开",
-    "plazaPublicDesc": "关闭后仅登录用户可浏览 /models"
+    "plazaPublicDesc": "关闭后仅登录用户可浏览 /models",
+    "loadFailed": "设置加载失败"
   },
   "plans": {
     "title": "订阅计划",
@@ -400,7 +440,8 @@
     "priceUnit": "价格单位：美元 / 1M tokens",
     "fVendor": "厂商 (openai/deepseek/zhipu/moonshot…)",
     "fDesc": "描述",
-    "fCtx": "上下文窗口 (tokens)"
+    "fCtx": "上下文窗口 (tokens)",
+    "colActions": "操作"
   },
   "system": {
     "title": "系统信息",
@@ -421,7 +462,8 @@
     "plans": "计划",
     "subs": "订阅",
     "requests": "调用量",
-    "moreHint": "请求量趋势与模型分布图表将随日志数据积累逐步开放。"
+    "moreHint": "请求量趋势与模型分布图表将随日志数据积累逐步开放。",
+    "loadFailed": "数据加载失败，部分统计不可用"
   },
   "wallet": {
     "title": "钱包",
@@ -483,5 +525,27 @@
     "f3": "分组与订阅：计划分配即生效，倍率计费，快照式订阅生命周期。",
     "f4": "Passkey 通行密钥免密登录，私钥永不离开你的设备。",
     "f5": "单二进制部署：前端嵌入，Docker Compose 一键起 PostgreSQL + Redis。"
+  },
+  "common": {
+    "comingSoon": "该功能即将上线",
+    "notFoundTitle": "页面不存在",
+    "notFoundDesc": "你访问的地址不存在或已被移动。",
+    "backHome": "返回首页"
+  },
+  "footer": {
+    "tagline": "一个网关，所有供应商 — 多协议 LLM API 网关",
+    "rights": "版权所有。",
+    "attribution": "版权所有，由项目贡献者设计与开发。",
+    "colAbout": "关于",
+    "colDocs": "文档",
+    "colRelated": "相关项目",
+    "linkAbout": "关于项目",
+    "linkReadme": "README",
+    "linkApi": "API 用法"
+  },
+  "subs": {
+    "stActive": "生效中",
+    "stExpired": "已过期",
+    "stDisabled": "已停用"
   }
 }

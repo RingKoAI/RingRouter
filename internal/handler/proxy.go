@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -66,10 +67,12 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gemini carries the model in the URL path, not the body.
+	// Gemini carries the model in the URL path, not the body. The name is
+	// validated segment-by-segment before it is used for upstream URL
+	// construction, so path traversal / query injection dies at the door.
 	if format == inbound.FormatGoogle {
 		req.Model = extractGeminiModel(r.URL.Path)
-		if req.Model == "" {
+		if req.Model == "" || !validModelPath(req.Model) {
 			p.writeErr(w, codec, http.StatusBadRequest, "invalid_request_error", "model is required in path")
 			return
 		}
@@ -329,6 +332,8 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 	// Cross-format path: consume the upstream fully, then re-emit.
 	raw, err := io.ReadAll(io.LimitReader(res.Body, maxBodyBytes))
 	if err != nil {
+		p.recordLogFull(r, req.Model, chIDOf(ch), 0, 0, "failed", "upstream stream read: "+err.Error(), time.Since(start), 0)
+		p.writeErr(w, codec, http.StatusBadGateway, "upstream_error", "upstream stream ended prematurely")
 		return
 	}
 	var unified *dto.ChatResponse
@@ -341,6 +346,8 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 		unified = accumulateOpenAISSE(raw)
 	}
 	if unified == nil {
+		p.recordLogFull(r, req.Model, chIDOf(ch), 0, 0, "failed", "upstream stream could not be decoded", time.Since(start), 0)
+		p.writeErr(w, codec, http.StatusBadGateway, "upstream_error", "upstream stream could not be decoded")
 		return
 	}
 	unified.Model = req.Model
@@ -349,6 +356,7 @@ func (p *Proxy) handleStream(w http.ResponseWriter, r *http.Request, codec inbou
 
 	out, err := codec.EncodeChat(unified)
 	if err != nil {
+		p.writeErr(w, codec, http.StatusInternalServerError, "internal_error", "failed to encode response")
 		return
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -374,7 +382,30 @@ func (p *Proxy) ListModels(w http.ResponseWriter, r *http.Request) {
 func (p *Proxy) writeErr(w http.ResponseWriter, codec inbound.Codec, status int, errType, msg string) {
 	w.Header().Set("Content-Type", codec.ContentType())
 	w.WriteHeader(status)
-	w.Write(codec.EncodeError(status, errType, msg))
+	w.Write(codec.EncodeError(status, errType, sanitizeUpstreamMessage(msg)))
+}
+
+// chIDOf returns the channel id (0 when the request was served by the env
+// fallback provider).
+func chIDOf(ch *model.Channel) uint {
+	if ch != nil {
+		return ch.ID
+	}
+	return 0
+}
+
+// upsteamMsgSanitizer keeps reflected upstream errors single-line and bounded
+// before they reach clients and log rows.
+var upsteamMsgSanitizer = strings.NewReplacer("\r", " ", "\n", " ")
+
+// sanitizeUpstreamMessage flattens CR/LF and truncates overly long upstream
+// payloads (which may embed vendor HTML) before they are reflected.
+func sanitizeUpstreamMessage(msg string) string {
+	msg = upsteamMsgSanitizer.Replace(msg)
+	if len(msg) > 512 {
+		msg = msg[:512]
+	}
+	return msg
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -409,6 +440,24 @@ func extractGeminiModel(path string) string {
 		rest = rest[:j]
 	}
 	return rest
+}
+
+// modelPathSegmentRe is the whitelist for each dot-separated/ slash-separated
+// segment of a model identifier that flows into upstream URL paths.
+var modelPathSegmentRe = regexp.MustCompile(`^[A-Za-z0-9._~-]{1,128}$`)
+
+// validModelPath reports whether a client-supplied model name is safe to
+// interpolate into an upstream URL path (no traversal, query, or fragment).
+func validModelPath(model string) bool {
+	if len(model) > 512 {
+		return false
+	}
+	for _, seg := range strings.Split(model, "/") {
+		if seg == "" || seg == "." || seg == ".." || !modelPathSegmentRe.MatchString(seg) {
+			return false
+		}
+	}
+	return true
 }
 
 // accumulateOpenAISSE folds an OpenAI SSE stream into one unified response.

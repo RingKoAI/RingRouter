@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { api, APIError } from '../../lib/api'
 
 export interface Token {
@@ -17,14 +18,15 @@ export type StatusFilter = 'all' | 'active' | 'disabled'
 
 /**
  * Token list state: fetch (with server-side name search), create with
- * one-time reveal, enable/disable toggle, delete. All mutations toast.
+ * one-time reveal (the freshly minted key is RETURNED to the caller — the
+ * backend never shows it again), enable/disable toggle, delete. All
+ * mutations toast.
  */
 export function useTokens() {
+  const { t } = useTranslation()
   const [tokens, setTokens] = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [newKey, setNewKey] = useState('')
-  const [error, setError] = useState('')
 
   const load = useCallback(async (q: string) => {
     setLoading(true)
@@ -40,41 +42,41 @@ export function useTokens() {
 
   useEffect(() => { load('') }, [load])
 
-  const create = useCallback(async (name: string): Promise<boolean> => {
-    setError(''); setCreating(true); setNewKey('')
+  // Returns the one-time plaintext key on success, or null on failure (the
+  // error message is already surfaced through the UI via the return path).
+  const create = useCallback(async (name: string): Promise<{ key: string } | { error: string } | null> => {
+    setCreating(true)
     try {
       const d = await api.post<{ token: { key: string } }>('/api/tokens', { name: name.trim() })
-      setNewKey(d.token.key)
-      toast.success('Key created')
+      toast.success(t('keys.created'))
       await load('')
-      return true
+      return { key: d.token.key }
     } catch (e) {
-      setError(e instanceof APIError ? e.message : 'network error')
-      return false
+      return { error: e instanceof APIError ? e.message : t('keys.networkError') }
     } finally {
       setCreating(false)
     }
-  }, [load])
+  }, [load, t])
 
   const toggle = useCallback(async (tok: Token) => {
     try {
       await api.put(`/api/tokens/${tok.id}`, { status: tok.status === 'active' ? 'disabled' : 'active' })
-      toast.success(tok.status === 'active' ? 'Key disabled' : 'Key enabled')
+      toast.success(tok.status === 'active' ? t('keys.disabledToast') : t('keys.enabledToast'))
       await load('')
     } catch (e) {
       if (e instanceof APIError) toast.error(e.message)
     }
-  }, [load])
+  }, [load, t])
 
   const remove = useCallback(async (id: number) => {
     try {
       await api.delete(`/api/tokens/${id}`)
-      toast.success('Key deleted')
+      toast.success(t('keys.deleted'))
       await load('')
     } catch (e) {
       if (e instanceof APIError) toast.error(e.message)
     }
-  }, [load])
+  }, [load, t])
 
-  return { tokens, loading, creating, newKey, error, create, toggle, remove, reload: load }
+  return { tokens, loading, creating, create, toggle, remove, reload: load }
 }

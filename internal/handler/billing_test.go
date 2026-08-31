@@ -17,6 +17,7 @@ func setupBillingTest(t *testing.T) {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect test db: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
 	t.Cleanup(func() {
 		setting.Reset()
 		database.Close()

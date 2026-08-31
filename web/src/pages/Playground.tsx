@@ -7,24 +7,16 @@ interface Msg { role: 'user' | 'assistant'; content: string }
 export default function Playground() {
   const { t } = useTranslation()
   const [model, setModel] = useState('')
-  const [models, setModels] = useState<string[]>([])
   const [input, setInput] = useState('')
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    // Reuse an existing API key from localStorage? Playground requires a key:
-    // ask the user for one, persisted locally only.
-    const saved = localStorage.getItem('rr_playground_key')
-    if (saved) setKey(saved)
-    // Models list is public via /api/status only; fetch requires a key, so
-    // the model field stays free-form with datalist suggestions from channels.
-    fetch('/api/status').then(() => {}).catch(() => {})
-  }, [])
-
-  const [key, setKey] = useState('')
+  // The API key lives in sessionStorage only: it vanishes when the tab
+  // closes, shrinking the window in which XSS or a shared machine could
+  // harvest it (the rest of the app uses HttpOnly cookies).
+  const [key, setKey] = useState(() => sessionStorage.getItem('rr_playground_key') ?? '')
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -38,7 +30,7 @@ export default function Playground() {
       return
     }
     setError('')
-    localStorage.setItem('rr_playground_key', key.trim())
+    sessionStorage.setItem('rr_playground_key', key.trim())
 
     const history = [...msgs, { role: 'user' as const, content: text }]
     setMsgs(history)
@@ -109,9 +101,8 @@ export default function Playground() {
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input className={`${inputCls} flex-1 font-mono text-xs`} placeholder={t('pg.apiKey')}
           value={key} onChange={(e) => setKey(e.target.value)} type="password" />
-        <input className={`${inputCls} sm:w-56`} placeholder={t('pg.model')} list="pg-models"
+        <input className={`${inputCls} sm:w-56 font-mono text-xs`} placeholder={t('pg.model')}
           value={model} onChange={(e) => setModel(e.target.value)} />
-        <datalist id="pg-models">{models.map((m) => <option key={m} value={m} />)}</datalist>
       </div>
 
       {/* Conversation */}

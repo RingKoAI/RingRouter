@@ -65,7 +65,7 @@ func (h *LogHandler) query(w http.ResponseWriter, r *http.Request, scope func(*g
 
 	tx := scope(database.DB.Model(&model.Log{}))
 	if modelName != "" {
-		tx = tx.Where("model_name LIKE ?", "%"+modelName+"%")
+		tx = tx.Where("model_name LIKE ?", likePattern(modelName))
 	}
 	if status == "success" || status == "failed" {
 		tx = tx.Where("status = ?", status)

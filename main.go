@@ -69,6 +69,11 @@ func main() {
 			log.Printf("[ringrouter] WARNING: failed to load settings: %v", err)
 		}
 		setting.EnsureDefaultGroup()
+		// Hot reload: pick up option edits made on any instance (SMTP,
+		// passkey, announcement, ...) without a restart.
+		settingCtx, stopSettings := context.WithCancel(context.Background())
+		defer stopSettings()
+		setting.StartAutoRefresh(settingCtx)
 	}
 
 	// Env-configured fallback provider (used when no DB channel matches).

@@ -25,9 +25,9 @@ type StreamOption struct {
 
 // Message is a unified chat message.
 type Message struct {
-	Role    string   `json:"role"`
-	Content string   `json:"content"`
-	Name    string   `json:"name,omitempty"`
+	Role    string `json:"role"`
+	Content string `json:"content"`
+	Name    string `json:"name,omitempty"`
 }
 
 // ChatResponse is the unified non-streaming chat completion response.

@@ -12,14 +12,14 @@ import (
 
 // openaiResponsesRequest is the upstream wire format for POST /v1/responses.
 type openaiResponsesRequest struct {
-	Model       string          `json:"model"`
-	Input       json.RawMessage `json:"input"`
-	Instructions string         `json:"instructions,omitempty"`
-	Stream      bool            `json:"stream,omitempty"`
-	Temperature *float64        `json:"temperature,omitempty"`
-	TopP        *float64        `json:"top_p,omitempty"`
-	MaxTokens   *int            `json:"max_output_tokens,omitempty"`
-	Stop        []string        `json:"stop,omitempty"`
+	Model        string          `json:"model"`
+	Input        json.RawMessage `json:"input"`
+	Instructions string          `json:"instructions,omitempty"`
+	Stream       bool            `json:"stream,omitempty"`
+	Temperature  *float64        `json:"temperature,omitempty"`
+	TopP         *float64        `json:"top_p,omitempty"`
+	MaxTokens    *int            `json:"max_output_tokens,omitempty"`
+	Stop         []string        `json:"stop,omitempty"`
 }
 
 // openaiResponsesResponse is the upstream wire format returned by POST /v1/responses.
@@ -110,9 +110,9 @@ func fromResponses(r *openaiResponsesResponse, requestedModel string) *dto.ChatR
 	}
 
 	return &dto.ChatResponse{
-		ID:      r.ID,
-		Object:  "response",
-		Model:   requestedModel,
+		ID:     r.ID,
+		Object: "response",
+		Model:  requestedModel,
 		Choices: []dto.Choice{{
 			Index:        0,
 			Message:      dto.Message{Role: "assistant", Content: text},

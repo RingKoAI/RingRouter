@@ -111,17 +111,20 @@ ADMIN_KEY=change-me ./ringrouter
 | `DB_DSN` | PG / MySQL 连接串 | — |
 | `DB_PATH` | SQLite 文件路径（仅 sqlite） | `data/ringrouter.db` |
 | `ADMIN_KEY` | 管理引导密钥，可换取管理会话 | 随机 |
-| `JWT_SECRET` | 密钥密封与签名盐（AES-GCM 派生） | 随机（重启后失效，务必固定） |
+| `JWT_SECRET` | 密钥密封与签名盐（AES-GCM 派生）；留空时自动生成 256bit 随机值并持久化到 `data/.instance_secret`（0600） | 自动生成并持久化 |
+| `ENCRYPTION_KEY` | 独立加密密钥（hex 32 字节），优先于 `JWT_SECRET` 派生 | — |
 | `REDIS_CONN_STRING` | `redis://[user[:pass]@]host:port/db`，设置即启用共享缓存 | 未启用 |
 | `REDIS_ENABLED` 等分离变量 | `REDIS_ENABLED=true` + `REDIS_ADDR/PASSWORD/DB` 的替代写法 | 未启用 |
+| `TRUSTED_PROXIES` | 反向代理 CIDR 列表（逗号分隔）；仅来自这些地址的连接信任 `X-Forwarded-For`/`X-Real-IP`。`*` 信任任意，`none` 完全禁用 | 仅 loopback |
+| `CHANNEL_ALLOW_PRIVATE_ADDR` | 渠道 base_url / SMTP 测试允许内网地址；`false` 开启 SSRF 加固（拒绝环回/私网/链路本地，含出站重定向逐跳校验） | `true` |
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` | 无数据库渠道时的兜底上游（可选） | — |
 | `ANNOUNCEMENT` | 首次启动播种公告（可选） | — |
-| `TURNSTILE_SITEKEY` / `TURNSTILE_SECRET` | Cloudflare Turnstile | 未启用 |
+| `TURNSTILE_SITEKEY` / `TURNSTILE_SECRET` | Cloudflare Turnstile（登录/注册/安装/SMTP 测试） | 未启用 |
 | `RATE_LIMIT_API` / `RATE_LIMIT_WEB` / `RATE_LIMIT_CRITICAL` | 每 IP 滑动窗口限额（网关 / 管理面 / 登录注册等敏感端点，`0` 关闭） | `480` / `240` / `20` |
-| `CHANNEL_ALLOW_PRIVATE_ADDR` | 渠道 base_url 允许内网地址；`false` 开启 SSRF 加固（拒绝环回/私网/链路本地） | `true` |
 
 > [!IMPORTANT]
-> 生产部署务必固定 `JWT_SECRET`（随机默认值重启轮换会使已加密的渠道密钥无法解密），并启用 HTTPS。
+> - 生产部署务必固定 `JWT_SECRET`（或保留自动持久化的 `data/.instance_secret` 且勿删除），并启用 HTTPS；compose 模板默认仅绑定 `127.0.0.1`，由前置反代对外服务。
+> - 直接对外（无反代）部署时，转发头会被伪造以绕过限流；保持默认「仅信任 loopback」或按拓扑配置 `TRUSTED_PROXIES`。
 
 ## 使用方法
 

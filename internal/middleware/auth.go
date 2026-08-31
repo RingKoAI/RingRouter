@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"crypto/subtle"
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
@@ -38,8 +40,9 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check admin key fallback
-		if a.AdminKey != "" && key == a.AdminKey {
+		// Check admin key fallback (constant-time so the comparison leaks no
+		// timing signal about the key's content or length).
+		if a.AdminKey != "" && subtle.ConstantTimeCompare([]byte(key), []byte(a.AdminKey)) == 1 {
 			ctx := context.WithValue(r.Context(), ctxKeyUser, &model.User{
 				ID:       0,
 				Username: "admin",
@@ -149,9 +152,18 @@ func GetToken(ctx context.Context) *model.Token {
 }
 
 func writeAuthError(w http.ResponseWriter, msg string) {
+	writeJSONString(w, http.StatusUnauthorized, "auth_error", msg)
+}
+
+// writeJSONString encodes an OpenAI-style error envelope with proper JSON
+// escaping — never hand-concatenated strings, which would let a future dynamic
+// message break out of the JSON string and inject markup.
+func writeJSONString(w http.ResponseWriter, status int, errType, msg string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte(`{"error":{"message":"` + msg + `","type":"auth_error"}}`))
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]map[string]string{
+		"error": {"message": msg, "type": errType},
+	})
 }
 
 // Logging returns an HTTP middleware that logs requests.
@@ -163,12 +175,17 @@ func Logging(next http.Handler) http.Handler {
 	})
 }
 
-// CORS returns an HTTP middleware that sets CORS headers.
+// CORS returns an HTTP middleware enabling cross-origin access for the
+// programmatic gateway surface (/v1/*). It deliberately never sets
+// Access-Control-Allow-Credentials, so browsers will not attach management
+// session cookies to cross-origin requests. The management plane (/api/*)
+// stays same-origin: its SPA is embedded in the same binary and cross-site
+// readers get no explicit grant.
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Api-Key, X-Goog-Api-Key, Anthropic-Version")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusNoContent)

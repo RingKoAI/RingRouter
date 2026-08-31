@@ -266,7 +266,8 @@ func (h *PasskeyHandler) LoginBegin(w http.ResponseWriter, r *http.Request) {
 
 	if username != "" {
 		var user model.User
-		if err := database.DB.Where("username = ? OR email = ?", username, strings.ToLower(username)).
+		if err := database.DB.Where("LOWER(username) = LOWER(?) OR email = ?",
+			username, strings.ToLower(username)).
 			First(&user).Error; err != nil || user.Status != "active" {
 			// Uniform response: no account enumeration through this path.
 			h.challenges.put(key, &challengeEntry{userID: 0}) // dead challenge
@@ -357,7 +358,7 @@ func (h *PasskeyHandler) LoginFinish(w http.ResponseWriter, r *http.Request) {
 			"last_used_at": time.Now(),
 		})
 
-	h.auth.startSession(w, &user)
+	h.auth.startSession(w, r, &user)
 	writeJSON(w, http.StatusOK, map[string]interface{}{"user": user})
 }
 
@@ -405,10 +406,13 @@ func transportsCSV(ts []protocol.AuthenticatorTransport) string {
 	return strings.Join(parts, ",")
 }
 
+// randomToken produces a hex token from crypto/rand. A failing entropy
+// source must abort the ceremony rather than fall back to a predictable
+// timestamp-derived value: challenge keys are bearer capabilities.
 func randomToken(n int) string {
 	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
-		return strconv.FormatInt(time.Now().UnixNano(), 36)
+		panic("crypto/rand unavailable: " + err.Error())
 	}
 	return hex.EncodeToString(b)
 }

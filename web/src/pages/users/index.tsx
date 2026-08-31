@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react'
 import { PageHeader } from '../../components/ui/primitives'
 import { api } from '../../lib/api'
 import { useUsers, type UserDialog } from './use-users'
@@ -23,11 +23,18 @@ export default function Users() {
   return (
     <div>
       <PageHeader title={t('users.title')} subtitle={t('users.subtitle')} actions={
-        <button onClick={refresh}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
-          <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-          <span className="hidden sm:inline">{t('users.refresh')}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={refresh}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer whitespace-nowrap">
+            <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">{t('users.refresh')}</span>
+          </button>
+          <button onClick={() => open({ kind: 'create' })}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark transition-colors cursor-pointer whitespace-nowrap">
+            <UserPlus size={15} strokeWidth={2} />
+            {t('users.create')}
+          </button>
+        </div>
       } />
 
       <div className="relative mb-4">
@@ -60,7 +67,7 @@ export default function Users() {
         </div>
       </div>
 
-      <UserDialogs dialog={dialog} onClose={() => setDialog({ kind: 'none' })} onRefresh={refresh} query={query} page={page.page} />
+      <UserDialogs dialog={dialog} onClose={() => setDialog({ kind: 'none' })} onRefresh={refresh} groups={groups} query={query} page={page.page} />
     </div>
   )
 }

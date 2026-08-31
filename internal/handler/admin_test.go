@@ -24,6 +24,7 @@ func setupAdminTest(t *testing.T) *AdminHandler {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect test db: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
 	t.Cleanup(func() {
 		database.Close()
 		database.DB = nil
@@ -49,6 +50,8 @@ func adminReq(t *testing.T, h *AdminHandler, method, path, body string, actor *m
 	}
 	rec := httptest.NewRecorder()
 	switch method {
+	case http.MethodPost:
+		h.Create(rec, req)
 	case http.MethodGet:
 		h.ListUsers(rec, req)
 	case http.MethodDelete:
@@ -68,6 +71,40 @@ func adminReq(t *testing.T, h *AdminHandler, method, path, body string, actor *m
 		}
 	}
 	return rec
+}
+
+func TestAdminCreateUserRequiresAdminAndValidatesInput(t *testing.T) {
+	h := setupAdminTest(t)
+	setting.EnsureDefaultGroup()
+
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"member@example.com","password":"password123"}`, nil); rec.Code != http.StatusForbidden {
+		t.Fatalf("unauthenticated create = %d, want 403", rec.Code)
+	}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"member@example.com","password":"password123"}`, &model.User{ID: 2, Role: "user", Status: "active"}); rec.Code != http.StatusForbidden {
+		t.Fatalf("member create = %d, want 403", rec.Code)
+	}
+
+	admin := &model.User{ID: 99, Role: "admin", Status: "active"}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"bad name","email":"member@example.com","password":"password123"}`, admin); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid username = %d, want 400", rec.Code)
+	}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"bad","password":"password123"}`, admin); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid email = %d, want 400", rec.Code)
+	}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"member@example.com","password":"short"}`, admin); rec.Code != http.StatusBadRequest {
+		t.Fatalf("short password = %d, want 400", rec.Code)
+	}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"member@example.com","password":"password123","role":"owner"}`, admin); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid role = %d, want 400", rec.Code)
+	}
+
+	rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"Member","email":"member@example.com","password":"password123","role":"user","group":"default","quota":100}`, admin)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("valid create = %d: %s", rec.Code, rec.Body.String())
+	}
+	if rec := adminReq(t, h, http.MethodPost, "/users", `{"username":"member","email":"other@example.com","password":"password123"}`, admin); rec.Code != http.StatusConflict {
+		t.Fatalf("case duplicate = %d, want 409", rec.Code)
+	}
 }
 
 func mkUser(t *testing.T, username, role, status string) model.User {

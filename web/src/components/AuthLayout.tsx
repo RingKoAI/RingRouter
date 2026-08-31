@@ -104,7 +104,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="px-4 pb-6 text-center anim-fade-in anim-delay-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
           >
             <ArrowLeft size={12} strokeWidth={2} />
             {t('auth.backHome')}

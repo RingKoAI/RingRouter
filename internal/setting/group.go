@@ -3,6 +3,8 @@ package setting
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"sync"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -59,6 +61,7 @@ func EnsureDefaultGroup() {
 		Ratio:     1,
 		IsDefault: true,
 	}).Error
+	InvalidateGroups() // first-boot seeding must be visible immediately
 }
 
 // Group ratio bounds: strictly positive (a zero ratio would silently make
@@ -73,20 +76,84 @@ func ValidGroupRatio(r float64) bool {
 	return r >= MinGroupRatio && r <= MaxGroupRatio
 }
 
+/* ── Group lookup cache ───────────────────────────────────────────────────── */
+
+// groupCacheTTL bounds staleness for cross-instance convergence: writes on
+// the local instance invalidate immediately (see InvalidateGroups), other
+// instances converge within the TTL — the same contract as the channel
+// snapshot in the gateway.
+const groupCacheTTL = 15 * time.Second
+
+type groupEntry struct {
+	ratio  float64
+	exists bool
+}
+
+var (
+	groupMu    sync.RWMutex
+	groupCache = map[string]groupEntry{}
+	groupAt    time.Time
+)
+
+// InvalidateGroups drops the group lookup cache. The admin group handlers
+// call it after every mutation so changes take effect on the next request
+// instead of waiting out the TTL.
+func InvalidateGroups() {
+	groupMu.Lock()
+	groupCache = map[string]groupEntry{}
+	groupAt = time.Time{}
+	groupMu.Unlock()
+}
+
+// ResetGroups clears the group cache unconditionally (used by tests when
+// the underlying database instance is swapped out).
+func ResetGroups() {
+	groupMu.Lock()
+	groupCache = nil
+	groupAt = time.Time{}
+	groupMu.Unlock()
+}
+
+// loadGroups returns the (possibly cached) name→entry view of the groups
+// table, refreshing it when stale.
+func loadGroups() map[string]groupEntry {
+	groupMu.RLock()
+	if groupCache != nil && time.Since(groupAt) < groupCacheTTL {
+		defer groupMu.RUnlock()
+		return groupCache
+	}
+	groupMu.RUnlock()
+
+	fresh := map[string]groupEntry{}
+	if database.DB != nil {
+		var groups []model.Group
+		if err := database.DB.Find(&groups).Error; err == nil {
+			for _, g := range groups {
+				ratio := 1.0
+				if ValidGroupRatio(g.Ratio) {
+					ratio = g.Ratio
+				}
+				fresh[g.Name] = groupEntry{ratio: ratio, exists: true}
+			}
+		}
+	}
+
+	groupMu.Lock()
+	groupCache, groupAt = fresh, time.Now()
+	groupMu.Unlock()
+	return fresh
+}
+
 // GroupRatio returns the billing multiplier for a group (default 1.0 when
 // the group or its ratio is unset — fail open to list price, never to zero).
 func GroupRatio(name string) float64 {
 	if database.DB == nil || name == "" {
 		return 1
 	}
-	var g model.Group
-	if err := database.DB.Select("ratio").Where("name = ?", name).First(&g).Error; err != nil {
-		return 1
+	if e, ok := loadGroups()[name]; ok {
+		return e.ratio
 	}
-	if !ValidGroupRatio(g.Ratio) {
-		return 1
-	}
-	return g.Ratio
+	return 1
 }
 
 // GroupExists reports whether a group with the given name exists.
@@ -94,9 +161,8 @@ func GroupExists(name string) bool {
 	if database.DB == nil || name == "" {
 		return false
 	}
-	var count int64
-	database.DB.Model(&model.Group{}).Where("name = ?", name).Count(&count)
-	return count > 0
+	e, ok := loadGroups()[name]
+	return ok && e.exists
 }
 
 // CreateGroup persists a new group. An empty uuid generates one (retrying on
@@ -108,26 +174,33 @@ func CreateGroup(name, uuid, metadata string, ratio float64) (*model.Group, erro
 	if database.DB == nil {
 		return nil, gorm.ErrInvalidDB
 	}
+	var g *model.Group
+	var err error
 	if uuid != "" {
-		g := &model.Group{Name: name, UUID: uuid, Metadata: metadata, Ratio: ratio}
-		if err := database.DB.Create(g).Error; err != nil {
-			return nil, err
-		}
-		return g, nil
-	}
-	for attempt := 0; attempt < 3; attempt++ {
-		u, err := newGroupUUID()
-		if err != nil {
-			return nil, err
-		}
-		g := &model.Group{Name: name, UUID: u, Metadata: metadata, Ratio: ratio}
-		if err := database.DB.Create(g).Error; err != nil {
-			if err == gorm.ErrDuplicatedKey {
-				continue
+		g, err = createGroupRow(name, uuid, metadata, ratio)
+	} else {
+		for attempt := 0; attempt < 3; attempt++ {
+			u, uerr := newGroupUUID()
+			if uerr != nil {
+				return nil, uerr
 			}
-			return nil, err
+			if g, err = createGroupRow(name, u, metadata, ratio); err == nil || err != gorm.ErrDuplicatedKey {
+				break
+			}
 		}
-		return g, nil
 	}
-	return nil, gorm.ErrDuplicatedKey
+	if err != nil {
+		return nil, err
+	}
+	// Keep the lookup cache coherent no matter which layer wrote the row.
+	InvalidateGroups()
+	return g, nil
+}
+
+func createGroupRow(name, uuid, metadata string, ratio float64) (*model.Group, error) {
+	g := &model.Group{Name: name, UUID: uuid, Metadata: metadata, Ratio: ratio}
+	if err := database.DB.Create(g).Error; err != nil {
+		return nil, err
+	}
+	return g, nil
 }

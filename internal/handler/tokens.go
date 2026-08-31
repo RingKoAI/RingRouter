@@ -52,7 +52,7 @@ func (h *TokenHandler) List(w http.ResponseWriter, r *http.Request) {
 	var tokens []model.Token
 	tx := database.DB.Where("user_id = ?", u.ID)
 	if q := strings.TrimSpace(r.URL.Query().Get("q")); q != "" {
-		tx = tx.Where("name LIKE ?", "%"+q+"%")
+		tx = tx.Where("name LIKE ?", likePattern(q))
 	}
 	if err := tx.Order("id DESC").Find(&tokens).Error; err != nil {
 		writeAPIError(w, http.StatusInternalServerError, "failed to list tokens")
@@ -64,7 +64,10 @@ func (h *TokenHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]tokenView, 0, len(tokens))
 	for _, t := range tokens {
-		out = append(out, tokenView{Token: t, KeyMasked: maskTokenKey(t.Key)})
+		// The plaintext key is shown exactly once at creation; listings and
+		// updates only ever expose the masked form.
+		t.Key = maskTokenKey(t.Key)
+		out = append(out, tokenView{Token: t, KeyMasked: t.Key})
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{"tokens": out})
 }
@@ -267,7 +270,10 @@ func (h *TokenHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	database.DB.First(&tok, tok.ID)
-	writeJSON(w, http.StatusOK, map[string]interface{}{"token": tok, "key_masked": maskTokenKey(tok.Key)})
+	// Never reflect the plaintext key on updates — it is displayed exactly
+	// once, at creation time. The raw column value is masked in place.
+	tok.Key = maskTokenKey(tok.Key)
+	writeJSON(w, http.StatusOK, map[string]interface{}{"token": tok, "key_masked": tok.Key})
 }
 
 /* ── Delete ──────────────────────────────────────────────────────────────── */

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Hammer, SearchX } from 'lucide-react'
 import { api } from './lib/api'
 import { useAuth } from './contexts/AuthContext'
 import Home from './pages/Home'
@@ -64,14 +66,45 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function Placeholder({ title }: { title: string }) {
+// Admin pages are hidden from the sidebar, but the URL is still typeable:
+// this guard fails fast (the backend re-checks authorization on every API
+// call regardless) instead of letting a member page half-load into 403s.
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <FullScreenSpinner />
+  if (!user) return <Navigate to="/auth/login" replace />
+  if (user.role !== 'admin') return <Navigate to="/dash/overview" replace />
+  return <>{children}</>
+}
+
+function Placeholder({ titleKey }: { titleKey: string }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
-        <span className="text-2xl">🚧</span>
+        <Hammer size={22} className="text-muted-foreground" />
       </div>
-      <h2 className="text-lg font-semibold mb-1">{title}</h2>
-      <p className="text-sm text-muted-foreground">即将上线</p>
+      <h2 className="text-lg font-semibold mb-1">{t(titleKey)}</h2>
+      <p className="text-sm text-muted-foreground">{t('common.comingSoon')}</p>
+    </div>
+  )
+}
+
+function NotFound() {
+  const { t } = useTranslation()
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 px-4 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+        <SearchX size={26} className="text-muted-foreground" />
+      </div>
+      <h1 className="text-2xl font-bold tracking-tight">{t('common.notFoundTitle')}</h1>
+      <p className="text-sm text-muted-foreground max-w-sm">{t('common.notFoundDesc')}</p>
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 min-h-[40px] px-5 text-sm bg-primary text-primary-foreground rounded-xl hover:bg-primary-dark transition-colors whitespace-nowrap"
+      >
+        {t('common.backHome')}
+      </Link>
     </div>
   )
 }
@@ -92,28 +125,28 @@ export default function App() {
       <Route path="/dash" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dash/overview" replace />} />
         {/* Chat */}
-        <Route path="chat" element={<Placeholder title="聊天" />} />
+        <Route path="chat" element={<Placeholder titleKey="nav.chat" />} />
         <Route path="playground" element={<Playground />} />
         {/* General */}
         <Route path="overview" element={<Dashboard />} />
         <Route path="data" element={<DataBoard />} />
         <Route path="keys" element={<Keys />} />
         <Route path="logs" element={<Logs />} />
-        <Route path="task-logs" element={<Placeholder title="任务日志" />} />
+        <Route path="task-logs" element={<Placeholder titleKey="nav.taskLogs" />} />
         {/* Personal */}
         <Route path="wallet" element={<Wallet />} />
         <Route path="profile" element={<Profile />} />
         {/* Admin */}
-        <Route path="manage/channels" element={<Channels />} />
-        <Route path="manage/models" element={<Models />} />
-        <Route path="manage/users" element={<Users />} />
-        <Route path="manage/codes" element={<Placeholder title="兑换码" />} />
-        <Route path="manage/subscriptions" element={<Subscriptions />} />
-        <Route path="manage/system" element={<System />} />
-        <Route path="manage/settings" element={<Settings />} />
+        <Route path="manage/channels" element={<AdminRoute><Channels /></AdminRoute>} />
+        <Route path="manage/models" element={<AdminRoute><Models /></AdminRoute>} />
+        <Route path="manage/users" element={<AdminRoute><Users /></AdminRoute>} />
+        <Route path="manage/codes" element={<AdminRoute><Placeholder titleKey="nav.codes" /></AdminRoute>} />
+        <Route path="manage/subscriptions" element={<AdminRoute><Subscriptions /></AdminRoute>} />
+        <Route path="manage/system" element={<AdminRoute><System /></AdminRoute>} />
+        <Route path="manage/settings" element={<AdminRoute><Settings /></AdminRoute>} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
     </>
   )

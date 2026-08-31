@@ -33,8 +33,8 @@ export default function Dashboard() {
       dot: 'bg-primary',
     },
     {
-      label: t('dashboard.uptime'),
-      value: '--',
+      label: t('dashboard.gatewayVersion'),
+      value: version ? `v${version}` : '…',
       icon: Activity,
       color: 'text-muted-foreground',
       dot: 'bg-muted-foreground',

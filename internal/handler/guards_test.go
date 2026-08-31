@@ -24,6 +24,7 @@ func setupGuardTest(t *testing.T) {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
 	t.Cleanup(func() {
 		setting.Reset()
 		os.Unsetenv("CHANNEL_ALLOW_PRIVATE_ADDR")

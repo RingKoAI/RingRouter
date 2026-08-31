@@ -93,14 +93,20 @@ export default function PublicNav() {
           scrolled ? 'border-border shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_12px_rgba(0,0,0,0.4)]' : 'border-transparent'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-2">
+        <div className={`max-w-6xl mx-auto px-4 flex items-center gap-2 transition-[height] duration-300 ${
+          scrolled ? 'h-[52px]' : 'h-16'
+        }`}>
 
-          {/* Brand */}
+          {/* Brand — logo and wordmark compress slightly on scroll */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl pr-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/85 flex items-center justify-center shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
-              <Zap size={15} className="text-primary-foreground" strokeWidth={2.5} />
+            <div className={`rounded-lg bg-gradient-to-br from-primary to-primary/85 flex items-center justify-center shadow-md shadow-primary/25 transition-all duration-300 group-hover:scale-105 group-hover:rotate-3 ${
+              scrolled ? 'w-7 h-7' : 'w-8 h-8'
+            }`}>
+              <Zap size={scrolled ? 14 : 15} className="text-primary-foreground transition-all duration-300" strokeWidth={2.5} />
             </div>
-            <span className="font-semibold tracking-tight">{siteName}</span>
+            <span className={`font-semibold tracking-tight transition-all duration-300 ${
+              scrolled ? 'text-[15px]' : 'text-base'
+            }`}>{siteName}</span>
           </Link>
 
           {/* Desktop links */}
@@ -113,7 +119,7 @@ export default function PublicNav() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             <a href="https://github.com/RingKoAI/RingRouter" target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 whitespace-nowrap">
               GitHub <ArrowUpRight size={12} />
             </a>
             <ThemeLangActions compact />
@@ -121,7 +127,7 @@ export default function PublicNav() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate('/dash/overview')}
-                  className="inline-flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-dark transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-dark transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] cursor-pointer whitespace-nowrap"
                 >
                   <LayoutDashboard size={14} />
                   {t('nav.console')}
@@ -138,10 +144,10 @@ export default function PublicNav() {
                 </button>
                 <button
                   onClick={() => navigate('/auth/register')}
-                  className="inline-flex items-center gap-1 min-h-[36px] px-4 rounded-xl text-sm font-medium bg-primary text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center gap-1 min-h-[36px] px-4 rounded-xl text-sm font-medium bg-primary text-primary-foreground whitespace-nowrap transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] cursor-pointer"
                 >
                   {t('auth.getStarted')}
-                  <ArrowRight size={13} className="transition-transform duration-200 " />
+                  <ArrowRight size={13} className="shrink-0 transition-transform duration-200" />
                 </button>
               </div>
             )}
@@ -213,7 +219,7 @@ export default function PublicNav() {
           {user ? (
             <div className="flex flex-col gap-2">
               <button onClick={() => { setDrawerOpen(false); navigate('/dash/overview') }}
-                className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium bg-primary text-primary-foreground active:scale-[0.98] transition-transform cursor-pointer">
+                className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium bg-primary text-primary-foreground active:scale-[0.98] transition-transform cursor-pointer whitespace-nowrap">
                 <LayoutDashboard size={15} /> {t('nav.console')}
               </button>
               <div className="flex justify-center py-2"><UserAvatar /></div>
@@ -225,8 +231,8 @@ export default function PublicNav() {
                 {t('auth.signIn')}
               </button>
               <button onClick={() => { setDrawerOpen(false); navigate('/auth/register') }}
-                className="inline-flex items-center justify-center gap-1 min-h-[44px] rounded-xl text-sm font-medium bg-primary text-primary-foreground active:scale-[0.98] transition-transform cursor-pointer">
-                {t('auth.getStarted')} <ArrowRight size={14} />
+                className="inline-flex items-center justify-center gap-1 min-h-[44px] rounded-xl text-sm font-medium bg-primary text-primary-foreground whitespace-nowrap active:scale-[0.98] transition-transform cursor-pointer">
+                {t('auth.getStarted')} <ArrowRight size={14} className="shrink-0" />
               </button>
             </div>
           )}

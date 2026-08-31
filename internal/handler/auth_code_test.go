@@ -53,6 +53,7 @@ func setupCodeTestDB(t *testing.T) *AuthHandler {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect test db: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
 	t.Cleanup(func() {
 		database.Close()
 		database.DB = nil
@@ -133,6 +134,8 @@ func TestSendCodeWithoutSMTPReturns503(t *testing.T) {
 	if err := database.Connect(database.Config{Type: "sqlite", Path: "file::memory:?cache=shared"}); err != nil {
 		t.Fatalf("connect test db: %v", err)
 	}
+	setting.ResetGroups() // fresh DB instance: drop the group lookup snapshot
+	setting.Reset()       // ...and the option cache: this test asserts SMTP-unconfigured
 	t.Cleanup(func() {
 		database.Close()
 		database.DB = nil

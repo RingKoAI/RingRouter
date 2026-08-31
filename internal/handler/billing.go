@@ -19,7 +19,9 @@ import (
 // QuotaPerUSD converts USD cost into quota points.
 const QuotaPerUSD = 500000
 
-// metaCacheTTL bounds how stale model prices may be after an admin edit.
+// metaCacheTTL bounds how stale model prices may be: local admin edits
+// invalidate immediately (see InvalidatePriceCache); the TTL only covers
+// cross-instance convergence and transient misses.
 const metaCacheTTL = time.Minute
 
 type priceEntry struct {

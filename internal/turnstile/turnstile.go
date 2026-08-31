@@ -26,10 +26,10 @@ type Result struct {
 }
 
 var (
-	mu        sync.RWMutex
-	secret    string
-	sitekey   string
-	enabled   bool
+	mu      sync.RWMutex
+	secret  string
+	sitekey string
+	enabled bool
 )
 
 // Init loads the Turnstile configuration from environment variables.

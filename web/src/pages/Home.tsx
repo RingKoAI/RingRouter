@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom'
 import { Trans, useTranslation } from 'react-i18next'
 import {
   ArrowRight, Zap, Layers, Shield, Globe, Copy, Check,
-  Settings, Link2, BarChart3, Sparkles, ChevronRight,
+  Settings, Link2, BarChart3, Sparkles, ChevronRight, Infinity as InfinityIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 import PublicNav from '../components/PublicNav'
+import SiteFooter from '../components/SiteFooter'
 import UserAvatar from '../components/UserAvatar'
 import { useSite } from '../contexts/SiteContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -14,27 +15,139 @@ import { Badge } from '../components/ui/badge'
 
 /* ── Code demo ──────────────────────────────────────────────────────────── */
 
+/** One protocol example: tab metadata + runnable curl + response preview. */
+interface ProtocolDemo {
+  name: string
+  chip: string
+  endpoint: string
+  curl: string[]
+  response: string[]
+}
+
+const protocolDemos: ProtocolDemo[] = [
+  {
+    name: 'Chat', chip: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    endpoint: '/v1/chat/completions',
+    curl: [
+      'curl -X POST "/v1/chat/completions" \\',
+      '  -H "Authorization: Bearer sk-••••" \\',
+      "  -H 'Content-Type: application/json' \\",
+      '  -d \'{',
+      '       "model": "your-model",',
+      '       "messages": [',
+      '         { "role": "user", "content": "..." }',
+      '       ]',
+      "     }'",
+    ],
+    response: [
+      '{',
+      '  "choices": [{',
+      '    "message": { "content": "Chat request routed." },',
+      '    "finish_reason": "stop"',
+      '  }],',
+      '  "usage": { "total_tokens": 27 }',
+      '}',
+    ],
+  },
+  {
+    name: 'Responses', chip: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+    endpoint: '/v1/responses',
+    curl: [
+      'curl -X POST "/v1/responses" \\',
+      '  -H "Authorization: Bearer sk-••••" \\',
+      "  -H 'Content-Type: application/json' \\",
+      '  -d \'{',
+      '       "model": "your-model",',
+      '       "input": "..."',
+      "     }'",
+    ],
+    response: [
+      '{',
+      '  "output": [{',
+      '    "type": "message",',
+      '    "content": [{ "type": "output_text", "text": "..." }]',
+      '  }],',
+      '  "usage": { "input_tokens": 18, "output_tokens": 9 }',
+      '}',
+    ],
+  },
+  {
+    name: 'Claude', chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    endpoint: '/v1/messages',
+    curl: [
+      'curl -X POST "/v1/messages" \\',
+      '  -H "x-api-key: sk-••••" \\',
+      '  -H "anthropic-version: 2023-06-01" \\',
+      "  -H 'Content-Type: application/json' \\",
+      '  -d \'{',
+      '       "model": "your-model",',
+      '       "max_tokens": 1024,',
+      '       "messages": [',
+      '         { "role": "user", "content": "..." }',
+      '       ]',
+      "     }'",
+    ],
+    response: [
+      '{',
+      '  "content": [{',
+      '    "type": "text",',
+      '    "text": "Chat request routed."',
+      '  }],',
+      '  "usage": { "input_tokens": 18, "output_tokens": 9 }',
+      '}',
+    ],
+  },
+  {
+    name: 'Gemini', chip: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    endpoint: '/v1beta/models/{model}:generateContent',
+    curl: [
+      'curl -X POST',
+      '  "/v1beta/models/your-model:generateContent" \\',
+      '  -H "x-goog-api-key: sk-••••" \\',
+      "  -H 'Content-Type: application/json' \\",
+      '  -d \'{',
+      '       "contents": [{',
+      '         "parts": [{ "text": "..." }]',
+      '       ]',
+      "     }'",
+    ],
+    response: [
+      '{',
+      '  "candidates": [{',
+      '    "content": { "parts": [{ "text": "..." }] }',
+      '  }],',
+      '  "usageMetadata": { "totalTokenCount": 27 }',
+      '}',
+    ],
+  },
+]
+
+/** Lightweight curl/JSON token colouring for one line. */
+function hl(line: string) {
+  const parts = line.match(/"[^"]*"|'[^']*'|\S+/g) ?? []
+  return parts.map((tok, i) => {
+    let cls = 'text-foreground/85'
+    if (tok === 'curl') cls = 'text-emerald-600 dark:text-emerald-400'
+    else if (tok === 'POST') cls = 'text-sky-600 dark:text-sky-400'
+    else if (tok.startsWith('-') && !tok.startsWith('--')) cls = 'text-amber-600 dark:text-amber-400'
+    else if (/^["']/.test(tok)) cls = 'text-primary'
+    else if (/^-?\d+(\.\d+)?$/.test(tok)) cls = 'text-amber-600 dark:text-amber-400'
+    return (
+      <span key={i} className={cls}>
+        {tok}
+        {i < parts.length - 1 ? ' ' : ''}
+      </span>
+    )
+  })
+}
+
 function CodeDemo() {
+  const [tab, setTab] = useState(0)
   const [copied, setCopied] = useState(false)
+  const demo = protocolDemos[tab]
 
-  const curlCmd = `curl -X POST \\
-  "/v1/chat/completions" \\
-  -H "Authorization: Bearer sk-••••" \\
-  -d '{
-    "model": "your-model",
-    "messages": [
-      { "role": "user", "content": "..." }
-    ]
-  }'`
-
-  const responseBody = `{
-  "choices": [{
-    "message": {
-      "content": "Chat request routed."
-    }
-  }],
-  "usage": { "total_tokens": 27 }
-}`
+  // Copy text = the exact multi-line curl (continuations included), runnable.
+  const curlCmd = demo.curl.join('\n')
 
   const handleCopy = () => {
     navigator.clipboard.writeText(curlCmd)
@@ -48,19 +161,17 @@ function CodeDemo() {
       <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-2xl opacity-40" />
 
       <div className="relative rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 overflow-hidden">
-        {/* Protocol tabs */}
-        <div className="flex items-center gap-1 border-b border-border/50 px-4 pt-3 bg-muted/30 overflow-x-auto">
-          {[
-            { name: 'Chat', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-            { name: 'Responses', color: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },
-            { name: 'Claude', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-            { name: 'Gemini', color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400' },
-          ].map((p, i) => (
+        {/* Protocol tabs — actually switchable */}
+        <div className="flex items-center gap-1 border-b border-border/50 px-4 pt-3 bg-muted/30 overflow-x-auto rr-scroll-thin" role="tablist" aria-label="Protocol">
+          {protocolDemos.map((p, i) => (
             <button
               key={p.name}
-              className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${
-                i === 0
-                  ? `${p.color} border-b-2 border-current shadow-sm`
+              role="tab"
+              aria-selected={i === tab}
+              onClick={() => { setTab(i); setCopied(false) }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap cursor-pointer ${
+                i === tab
+                  ? `${p.chip} border-b-2 border-current shadow-sm`
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
@@ -75,7 +186,7 @@ function CodeDemo() {
             <span className="text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">
               POST
             </span>
-            <span className="text-xs text-muted-foreground font-mono">/v1/chat/completions</span>
+            <span className="text-xs text-muted-foreground font-mono break-all">{demo.endpoint}</span>
           </div>
 
           {/* Request */}
@@ -85,26 +196,17 @@ function CodeDemo() {
           </div>
 
           <div className="relative rounded-xl bg-muted/40 border border-border/40 overflow-hidden group">
-            <pre className="p-4 text-[12px] leading-relaxed font-mono text-foreground/90 overflow-x-auto">
-              <code>
-                <span className="text-emerald-600 dark:text-emerald-400">curl</span>{' '}
-                <span className="text-amber-600 dark:text-amber-400">-X</span>{' '}
-                <span className="text-sky-600 dark:text-sky-400">POST</span>{' '}
-                <span className="text-primary">"/v1/chat/completions"</span>{' '}
-                <span className="text-emerald-600 dark:text-emerald-400">-H</span>{' '}
-                <span className="text-primary">"Authorization: Bearer sk-••••"</span>{' '}
-                <span className="text-emerald-600 dark:text-emerald-400">-d</span>{' '}
-                <span className="text-muted-foreground">'{`{`}</span>{'\n'}
-                {'  '}"model": <span className="text-primary">"your-model"</span>,{'\n'}
-                {'  '}"messages": [{'\n'}
-                {'    '}{`{`} "role": <span className="text-primary">"user"</span>, "content": <span className="text-primary">"..."</span> {`}`},{'\n'}
-                {'  '}]{'\n'}
-                <span className="text-muted-foreground">{`}`}'</span>
-              </code>
+            {/* One source line per row: no mid-token wrapping, horizontal
+                scroll only when a single line cannot fit. */}
+            <pre className="p-4 text-[12px] leading-relaxed font-mono overflow-x-auto rr-scroll-thin">
+              {demo.curl.map((line, i) => (
+                <code key={i} className="block whitespace-pre">{hl(line)}</code>
+              ))}
             </pre>
             <button
               onClick={handleCopy}
-              className="absolute top-2 right-2 p-1.5 rounded-md bg-card/80 border border-border/50 hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
+              title="Copy"
+              className="absolute top-2 right-2 p-1.5 rounded-md bg-card/80 border border-border/50 hover:bg-muted transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer"
             >
               {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-muted-foreground" />}
             </button>
@@ -114,15 +216,10 @@ function CodeDemo() {
           <div className="mt-4">
             <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/60">RESPONSE</span>
             <div className="mt-2 rounded-xl bg-muted/40 border border-border/40 overflow-hidden">
-              <pre className="p-4 text-[12px] leading-relaxed font-mono text-foreground/80 overflow-x-auto">
-                <code>
-                  <span className="text-muted-foreground">{`{`}</span>{'\n'}
-                  {'  '}"choices": [{'{ '}"message": {'{ '}"content":{'\n'}
-                  {'    '}<span className="text-emerald-600 dark:text-emerald-400">"Chat request routed."</span>{'\n'}
-                  {'  '}{'} '}]{'} '}],{'\n'}
-                  {'  '}"usage": {'{ '}"total_tokens": <span className="text-amber-600 dark:text-amber-400">27</span>{' }'}{'\n'}
-                  <span className="text-muted-foreground">{`}`}</span>
-                </code>
+              <pre className="p-4 text-[12px] leading-relaxed font-mono overflow-x-auto rr-scroll-thin">
+                {demo.response.map((line, i) => (
+                  <code key={i} className="block whitespace-pre text-foreground/80">{hl(line)}</code>
+                ))}
               </pre>
             </div>
           </div>
@@ -219,15 +316,20 @@ export default function Home() {
 
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 anim-fade-up anim-delay-3">
-          <Button size="lg" asChild className="shadow-xl shadow-primary/25 hover:shadow-primary/35 transition-all px-8">
-            <Link to="/auth/login" className="gap-2">
-              {t('home.getStarted')} <ArrowRight size={16} />
-            </Link>
+          <Button
+            size="lg"
+            render={<Link to="/auth/login" />}
+            className="shadow-xl shadow-primary/25 hover:shadow-primary/35 transition-all px-8 gap-2"
+          >
+            {t('home.getStarted')} <ArrowRight size={16} />
           </Button>
-          <Button variant="outline" size="lg" asChild className="border-border/50 hover:bg-muted/50">
-            <a href="https://github.com/RingKoAI/RingRouter" target="_blank" rel="noopener noreferrer">
-              {t('home.viewGitHub')}
-            </a>
+          <Button
+            variant="outline"
+            size="lg"
+            render={<a href="https://github.com/RingKoAI/RingRouter" target="_blank" rel="noopener noreferrer" />}
+            className="border-border/50 hover:bg-muted/50"
+          >
+            {t('home.viewGitHub')}
           </Button>
         </div>
 
@@ -266,11 +368,11 @@ export default function Home() {
             { value: '10+', key: 'adapters', gradient: 'from-primary/10 to-primary/5' },
             { value: '10+', key: 'billing', gradient: 'from-accent/10 to-accent/5' },
             { value: '10+', key: 'routing', gradient: 'from-sky-500/10 to-sky-500/5' },
-            { value: '∞', key: 'control', gradient: 'from-violet-500/10 to-violet-500/5' },
+            { value: '∞', key: 'control', gradient: 'from-violet-500/10 to-violet-500/5', icon: InfinityIcon },
           ].map((s) => (
             <div key={s.key} className={`relative p-5 rounded-2xl border border-border/40 bg-gradient-to-br ${s.gradient} backdrop-blur-sm text-center hover:border-primary/20 transition-colors`}>
-              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                {s.value}
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent flex items-center justify-center">
+                {s.icon ? <s.icon className="!text-foreground/80" strokeWidth={2.2} /> : s.value}
               </div>
               <div className="text-xs text-muted-foreground mt-2 font-medium">{t(`home.stats.${s.key}`)}</div>
             </div>
@@ -282,18 +384,18 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 md:px-6 pb-20">
         <div className="flex flex-wrap items-center justify-center gap-3">
           {[
-            { label: 'OpenAI', icon: '🟢' },
-            { label: 'Claude', icon: '🟠' },
-            { label: 'Gemini', icon: '🔵' },
-            { label: 'DeepSeek', icon: '🟣' },
-            { label: 'Qwen', icon: '🔴' },
-            { label: 'Llama', icon: '🦙' },
+            { label: 'OpenAI', dot: 'bg-emerald-500' },
+            { label: 'Claude', dot: 'bg-orange-500' },
+            { label: 'Gemini', dot: 'bg-blue-500' },
+            { label: 'DeepSeek', dot: 'bg-violet-500' },
+            { label: 'Qwen', dot: 'bg-red-500' },
+            { label: 'Llama', dot: 'bg-sky-500' },
           ].map((p) => (
             <span
               key={p.label}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-card hover:shadow-md transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-card hover:shadow-md transition-all whitespace-nowrap"
             >
-              <span>{p.icon}</span>
+              <span className={`w-2 h-2 rounded-full ${p.dot}`} aria-hidden="true" />
               {p.label}
             </span>
           ))}
@@ -374,29 +476,19 @@ export default function Home() {
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
               {t('home.heroDesc')}
             </p>
-            <Button size="lg" asChild className="shadow-xl shadow-primary/25 px-8">
-              <Link to="/auth/login" className="gap-2">
-                {t('home.getStarted')} <ArrowRight size={16} />
-              </Link>
+            <Button
+              size="lg"
+              render={<Link to="/auth/login" />}
+              className="shadow-xl shadow-primary/25 px-8 gap-2"
+            >
+              {t('home.getStarted')} <ArrowRight size={16} />
             </Button>
           </div>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <Zap size={12} className="text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <span className="text-sm font-medium tracking-tight">{siteName}</span>
-          </div>
-          <p className="text-xs text-muted-foreground/60">
-            {t('home.footer')}
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

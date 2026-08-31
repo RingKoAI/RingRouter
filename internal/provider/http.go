@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 )
 
 // httpProvider is the shared HTTP plumbing for all vendor adapters.
@@ -26,7 +27,29 @@ func newHTTPProvider(name, apiKey, baseURL string) httpProvider {
 		name:       name,
 		apiKey:     apiKey,
 		baseURL:    strings.TrimRight(baseURL, "/"),
-		httpClient: &http.Client{Timeout: 120 * time.Second},
+		httpClient: newUpstreamClient(),
+	}
+}
+
+// maxRedirects bounds how far an upstream may bounce a request.
+const maxRedirects = 3
+
+// newUpstreamClient builds the shared outbound client with a redirect policy
+// that re-applies the SSRF private-address policy on every hop, so a public
+// channel URL cannot 302 the gateway into an internal endpoint when
+// CHANNEL_ALLOW_PRIVATE_ADDR=false.
+func newUpstreamClient() *http.Client {
+	return &http.Client{
+		Timeout: 120 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= maxRedirects {
+				return fmt.Errorf("%s: too many redirects", "upstream")
+			}
+			if err := safenet.ValidateOutboundHost(req.URL.Hostname()); err != nil {
+				return fmt.Errorf("upstream redirect to a private address is not allowed")
+			}
+			return nil
+		},
 	}
 }
 
@@ -51,7 +74,7 @@ func (p httpProvider) do(ctx context.Context, method, url string, body []byte, h
 		return nil, fmt.Errorf("%s: do request: %w", p.name, err)
 	}
 	if resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
 		resp.Body.Close()
 		return nil, &UpstreamError{Provider: p.name, Status: resp.StatusCode, Body: strings.TrimSpace(string(b))}
 	}
@@ -65,11 +88,20 @@ type UpstreamError struct {
 	Body     string
 }
 
+// errorBodySanitizer strips control characters that upstream bodies may carry;
+// the message flows into client responses and log rows as JSON, so keeping it
+// single-line avoids log forging and message injection.
+var errorBodySanitizer = strings.NewReplacer("\r", " ", "\n", " ")
+
 func (e *UpstreamError) Error() string {
 	if e.Body == "" {
 		return fmt.Sprintf("%s upstream returned %d", e.Provider, e.Status)
 	}
-	return fmt.Sprintf("%s upstream returned %d: %s", e.Provider, e.Status, e.Body)
+	body := e.Body
+	if len(body) > 512 {
+		body = body[:512]
+	}
+	return fmt.Sprintf("%s upstream returned %d: %s", e.Provider, e.Status, errorBodySanitizer.Replace(body))
 }
 
 // bufferedResult serializes a unified response for clients that requested a

@@ -15,14 +15,19 @@ interface SettingsData {
 export default function Settings() {
   const { t } = useTranslation()
   const [data, setData] = useState<SettingsData | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [smtpPassword, setSmtpPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [info, setInfo] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    api.get<SettingsData>('/api/admin/settings').then(setData).catch(() => {})
-  }, [])
+  const load = () => {
+    setLoadFailed(false)
+    api.get<SettingsData>('/api/admin/settings')
+      .then(setData)
+      .catch(() => { setLoadFailed(true); setData(null) })
+  }
+  useEffect(load, [])
 
   const save = async () => {
     if (!data) return
@@ -53,7 +58,21 @@ export default function Settings() {
   }
 
   if (!data) {
-    return <div className="py-20 text-center text-muted-foreground text-sm">…</div>
+    if (!loadFailed) {
+      return (
+        <div className="py-20 flex justify-center">
+          <div className="w-6 h-6 rounded-full border-2 border-border border-t-primary animate-spin" />
+        </div>
+      )
+    }
+    return (
+      <div className="py-20 text-center space-y-3">
+        <p className="text-sm text-destructive">{t('settings.loadFailed')}</p>
+        <button onClick={load} className="px-4 min-h-[38px] text-sm border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
+          {t('channels.refresh')}
+        </button>
+      </div>
+    )
   }
 
   const inputCls = 'w-full min-h-[40px] px-3 py-2 border border-input rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary'
@@ -174,7 +193,7 @@ export default function Settings() {
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
 
       <button onClick={save} disabled={saving}
-        className="inline-flex items-center gap-2 min-h-[42px] px-6 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer">
+        className="inline-flex items-center gap-2 min-h-[42px] px-6 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap">
         {saving && <Loader2 size={14} className="animate-spin" />}
         <Save size={14} />
         {t('settings.save')}

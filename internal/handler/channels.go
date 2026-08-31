@@ -165,7 +165,7 @@ func (h *ChannelHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if q != "" {
-		like := "%" + q + "%"
+		like := likePattern(q)
 		tx = tx.Where("name LIKE ? OR models LIKE ? OR protocol LIKE ?", like, like, like)
 	}
 	var rows []model.Channel

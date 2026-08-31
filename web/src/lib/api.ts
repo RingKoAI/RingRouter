@@ -9,10 +9,29 @@ export class APIError extends Error {
   }
 }
 
+// Session-expiry hook: when any request comes back 401 the management
+// session is gone — bounce to the login page once instead of letting every
+// page silently degrade into empty states.
+let unauthorizedHandler: (() => void) | null = null
+
+export function onUnauthorized(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
+let lastUnauthorizedAt = 0
+
+function handleUnauthorized() {
+  if (!unauthorizedHandler) return
+  // Debounce: concurrent failed calls must not fan out into repeated calls.
+  const now = Date.now()
+  if (now - lastUnauthorizedAt < 2000) return
+  lastUnauthorizedAt = now
+  unauthorizedHandler()
+}
+
 async function request<T = any>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
+  const headers: Record<string, string> = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -29,6 +48,9 @@ async function request<T = any>(method: string, path: string, body?: unknown): P
   }
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith('/api/auth/')) {
+      handleUnauthorized()
+    }
     throw new APIError(res.status, data?.error || `HTTP ${res.status}`)
   }
 
