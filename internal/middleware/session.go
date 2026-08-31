@@ -34,7 +34,7 @@ func NewSessionAuth(adminKey string) *SessionAuth {
 func (s *SessionAuth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Track 1: session cookie.
-		if c, err := r.Cookie(SessionCookieName); err == nil && c.Value != "" {
+		if c, err := r.Cookie(SessionCookieName); err == nil && c.Value != "" && database.DB != nil {
 			digest := SessionDigest(c.Value)
 			var sess model.Session
 			if err := database.DB.Where("id = ?", digest).First(&sess).Error; err == nil {

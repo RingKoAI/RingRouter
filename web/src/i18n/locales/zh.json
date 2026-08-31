@@ -100,6 +100,16 @@
     "or": "或",
     "passkeyLogin": "使用通行密钥登录",
     "passkeyFailed": "通行密钥验证失败，请重试",
+    "passkeyDisabledByAdmin": "管理员未开启通行密钥登录",
+    "passkeyErrors": {
+      "cancelled": "已取消通行密钥操作",
+      "disabled": "管理员未开启通行密钥登录",
+      "unsupported": "当前浏览器或访问环境不支持通行密钥，请使用支持 WebAuthn 的浏览器并通过 HTTPS 访问",
+      "alreadyRegistered": "这个通行密钥已经注册，无需重复添加",
+      "originMismatch": "当前域名与管理员配置的 RP ID 或 Origin 不匹配",
+      "sessionExpired": "登录会话已过期，请重新登录后再注册通行密钥",
+      "rejected": "通行密钥请求被拒绝，请检查账号、设备或管理员配置后重试"
+    },
     "passkeyEnroll": "还没有通行密钥？注册一个",
     "passkeyEnrollTitle": "注册通行密钥",
     "passkeyEnrollDesc": "先验证账号密码确认身份，然后按设备提示完成注册。之后即可用通行密钥免密登录。",
@@ -130,7 +140,10 @@
     "announcement": "公告",
     "collapse": "折叠侧边栏",
     "expand": "展开侧边栏",
-    "backHome": "返回首页"
+    "backHome": "返回首页",
+    "serviceUnavailable": "服务暂时不可用",
+    "serviceUnavailableDesc": "无法读取安装状态，请检查服务后重试。",
+    "retry": "重试"
   },
   "nav": {
     "chat": "聊天",
@@ -482,7 +495,8 @@
     "placeholder": "输入消息，Enter 发送，Shift+Enter 换行",
     "clear": "清空对话",
     "hint": "配置密钥与模型后开始对话",
-    "emptyResponse": "（空响应）"
+    "emptyResponse": "（空响应）",
+    "timeout": "请求超时，已自动停止。"
   },
   "plaza": {
     "title": "模型广场",

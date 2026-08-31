@@ -5,7 +5,7 @@ import { Loader2, Eye, EyeOff, Fingerprint, KeyRound, X } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 import Turnstile from '../components/Turnstile'
 import { api, APIError } from '../lib/api'
-import { loginWithPasskey, registerPasskey, isPasskeySupported } from '../lib/webauthn'
+import { loginWithPasskey, registerPasskey, isPasskeySupported, passkeyErrorCode } from '../lib/webauthn'
 import { useAuth } from '../contexts/AuthContext'
 import { useSite } from '../contexts/SiteContext'
 
@@ -32,6 +32,8 @@ export default function Login() {
 
   useEffect(() => { isPasskeySupported().then(setPasskeySupported) }, [])
 
+  const passkeyMessage = (err: unknown) => t(`auth.passkeyErrors.${passkeyErrorCode(err)}`)
+
   // Prefill the enrollment dialog with whatever account the user typed.
   const openEnroll = () => {
     setEnrollAccount(account)
@@ -56,10 +58,7 @@ export default function Login() {
       setEnrollInfo(t('auth.passkeyEnrolled'))
       setEnrollPassword('')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      if (msg === 'passkey-cancelled') setError('')
-      else if (err instanceof APIError) setError(err.message)
-      else setError(t('auth.passkeyFailed'))
+      setError(passkeyMessage(err))
     } finally {
       setEnrollBusy(false)
     }
@@ -99,9 +98,7 @@ export default function Login() {
       await refresh()
       navigate('/dash/overview')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'passkey-failed'
-      if (msg === 'passkey-cancelled') setError('')
-      else setError(t('auth.passkeyFailed'))
+      setError(passkeyMessage(err))
     } finally {
       setPasskeyBusy(false)
     }
@@ -209,6 +206,18 @@ export default function Login() {
                 {t('auth.passkeyEnroll')}
               </button>
             </>
+          )}
+          {!passkeyEnabled && (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
+              <Fingerprint size={14} className="shrink-0" />
+              {t('auth.passkeyDisabledByAdmin')}
+            </div>
+          )}
+          {passkeyEnabled && !passkeySupported && (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300">
+              <Fingerprint size={14} className="shrink-0" />
+              {t('auth.passkeyErrors.unsupported')}
+            </div>
           )}
         </form>
 

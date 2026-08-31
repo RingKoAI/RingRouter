@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 	"github.com/RingKoAI/RingRouter/internal/setting"
 )
 
@@ -53,6 +54,9 @@ func (m *Mailer) SendWith(cfg setting.SMTPConfig, to, subject, body string) erro
 	}
 	if err := validateAddress(to); err != nil {
 		return fmt.Errorf("invalid recipient address: %w", err)
+	}
+	if err := safenet.ValidateOutboundHost(cfg.Host); err != nil {
+		return fmt.Errorf("SMTP host rejected by network policy")
 	}
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))

@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post('/api/auth/logout')
     } finally {
       setUser(null)
+      sessionStorage.removeItem('rr_playground_key')
     }
   }, [])
 

@@ -100,6 +100,16 @@
     "or": "or",
     "passkeyLogin": "Sign in with a passkey",
     "passkeyFailed": "Passkey verification failed, please retry",
+    "passkeyDisabledByAdmin": "Passkey sign-in has not been enabled by the administrator",
+    "passkeyErrors": {
+      "cancelled": "The passkey operation was cancelled",
+      "disabled": "Passkey sign-in has not been enabled by the administrator",
+      "unsupported": "This browser or context does not support passkeys. Use a WebAuthn-capable browser over HTTPS.",
+      "alreadyRegistered": "This passkey is already registered",
+      "originMismatch": "This domain does not match the administrator's RP ID or Origin configuration",
+      "sessionExpired": "Your session expired. Sign in again before registering a passkey.",
+      "rejected": "The passkey request was rejected. Check the account, device, or administrator configuration and retry."
+    },
     "passkeyEnroll": "No passkey yet? Register one",
     "passkeyEnrollTitle": "Register a passkey",
     "passkeyEnrollDesc": "Verify your account password first, then follow your device's prompt. After that, sign in with the passkey — no password needed.",
@@ -482,7 +492,8 @@
     "placeholder": "Type a message; Enter to send, Shift+Enter for newline",
     "clear": "Clear conversation",
     "hint": "Configure a key and model to start",
-    "emptyResponse": "(empty response)"
+    "emptyResponse": "(empty response)",
+    "timeout": "Request timed out and was stopped."
   },
   "plaza": {
     "title": "Model Plaza",
@@ -530,7 +541,10 @@
     "comingSoon": "Coming soon",
     "notFoundTitle": "Page not found",
     "notFoundDesc": "The address you visited does not exist or has moved.",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "serviceUnavailable": "Service unavailable",
+    "serviceUnavailableDesc": "The setup status could not be read. Check the service and retry.",
+    "retry": "Retry"
   },
   "footer": {
     "tagline": "One gateway, every provider — multi-protocol LLM API gateway",

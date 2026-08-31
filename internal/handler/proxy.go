@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,15 @@ import (
 )
 
 const maxBodyBytes = 16 << 20 // 16 MiB request cap
+
+const (
+	maxPendingLogWrites = 1024
+	logWriteTimeout     = 5 * time.Second
+)
+
+// logWriteSlots bounds asynchronous persistence. A slow database must not
+// turn one goroutine per request into an unbounded memory exhaustion vector.
+var logWriteSlots = make(chan struct{}, maxPendingLogWrites)
 
 // Proxy is the gateway HTTP handler. It accepts any inbound wire format,
 // routes through the multi-channel gateway, and replies in the inbound format.
@@ -56,9 +66,14 @@ func (p *Proxy) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxBodyBytes))
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxBodyBytes+1))
 	if err != nil {
 		p.writeErr(w, codec, http.StatusBadRequest, "invalid_request_error", "failed to read body")
+		return
+	}
+	if len(body) > maxBodyBytes {
+		p.writeErr(w, codec, http.StatusRequestEntityTooLarge, "invalid_request_error", "request body exceeds the maximum allowed size")
 		return
 	}
 	req, err := codec.Decode(body)
@@ -175,6 +190,7 @@ func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint,
 	if database.DB == nil {
 		return
 	}
+	db := database.DB
 	u := middleware.GetUser(r.Context())
 	tok := middleware.GetToken(r.Context())
 	entry := model.Log{
@@ -195,8 +211,17 @@ func (p *Proxy) recordLogFull(r *http.Request, modelName string, channelID uint,
 		entry.TokenID = tok.ID
 	}
 	entry.ElapsedMs = elapsed.Milliseconds()
+	select {
+	case logWriteSlots <- struct{}{}:
+	default:
+		log.Printf("[proxy] log queue full; dropping request log")
+		return
+	}
 	go func() {
-		if err := database.DB.Create(&entry).Error; err != nil {
+		defer func() { <-logWriteSlots }()
+		ctx, cancel := context.WithTimeout(context.Background(), logWriteTimeout)
+		defer cancel()
+		if err := db.WithContext(ctx).Create(&entry).Error; err != nil {
 			log.Printf("[proxy] log write failed: %v", err)
 		}
 	}()
@@ -377,6 +402,75 @@ func (p *Proxy) ListModels(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, dto.ModelList{Object: "list", Data: models})
+}
+
+// QuotaLimit exposes the caller's effective quota for clients that probe the
+// New API-compatible usage endpoint. It never exposes API keys; when both a
+// user quota and token quota are finite, the stricter remaining balance wins.
+func (p *Proxy) QuotaLimit(w http.ResponseWriter, r *http.Request) {
+	u := middleware.GetUser(r.Context())
+	if u == nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+		return
+	}
+	limit, used := effectiveQuota(u, middleware.GetToken(r.Context()))
+	remaining := int64(-1)
+	if limit >= 0 {
+		remaining = limit - used
+		if remaining < 0 {
+			remaining = 0
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"object":    "quota_limit",
+		"limit":     limit,
+		"used":      used,
+		"remaining": remaining,
+		"unlimited": limit < 0,
+	})
+}
+
+// Credits returns the same effective balance under the credits vocabulary
+// used by several compatible clients. Values are internal quota points, not
+// currency, and are deliberately duplicated under common field names for
+// wire compatibility.
+func (p *Proxy) Credits(w http.ResponseWriter, r *http.Request) {
+	u := middleware.GetUser(r.Context())
+	if u == nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+		return
+	}
+	limit, used := effectiveQuota(u, middleware.GetToken(r.Context()))
+	remaining := int64(-1)
+	if limit >= 0 {
+		remaining = limit - used
+		if remaining < 0 {
+			remaining = 0
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"object":            "credits",
+		"credits":           remaining,
+		"balance":           remaining,
+		"limit":             limit,
+		"used_credits":      used,
+		"remaining_credits": remaining,
+	})
+}
+
+func effectiveQuota(u *model.User, tok *model.Token) (limit, used int64) {
+	if u == nil {
+		return 0, 0
+	}
+	remaining := u.Quota
+	used = u.UsedQuota
+	if tok != nil && tok.Quota >= 0 && (remaining < 0 || tok.Quota < remaining) {
+		remaining, used = tok.Quota, tok.UsedQuota
+	}
+	if remaining < 0 {
+		return -1, used
+	}
+	return remaining + used, used
 }
 
 func (p *Proxy) writeErr(w http.ResponseWriter, codec inbound.Codec, status int, errType, msg string) {

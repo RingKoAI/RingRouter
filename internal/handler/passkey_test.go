@@ -86,6 +86,33 @@ func TestPasskeyDisabledAnswers503(t *testing.T) {
 	}
 }
 
+func TestValidatePasskeySettings(t *testing.T) {
+	valid := []struct{ rpID, origins string }{
+		{"example.com", "https://example.com"},
+		{"example.com", "https://login.example.com,https://example.com"},
+		{"localhost", "http://localhost:3000"},
+		{"127.0.0.1", "http://127.0.0.1:3000"},
+	}
+	for _, tc := range valid {
+		if err := validatePasskeySettings(tc.rpID, tc.origins); err != nil {
+			t.Errorf("validatePasskeySettings(%q, %q) = %v", tc.rpID, tc.origins, err)
+		}
+	}
+	invalid := []struct{ rpID, origins string }{
+		{"example.com", "http://example.com"},
+		{"example.com", "https://evil.example.net"},
+		{"example.com", "https://example.com/login"},
+		{"example.com", "https://user:pass@example.com"},
+		{"example.com", "https://example.com?redirect=evil"},
+		{"", "https://example.com"},
+	}
+	for _, tc := range invalid {
+		if err := validatePasskeySettings(tc.rpID, tc.origins); err == nil {
+			t.Errorf("validatePasskeySettings(%q, %q) accepted invalid config", tc.rpID, tc.origins)
+		}
+	}
+}
+
 func TestPasskeyRegisterRequiresSessionAndValidChallenge(t *testing.T) {
 	h := setupPasskeyTest(t)
 	enablePasskey(t)

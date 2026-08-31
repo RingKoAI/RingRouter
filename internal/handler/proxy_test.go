@@ -1,7 +1,13 @@
 package handler
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/RingKoAI/RingRouter/internal/middleware"
+	"github.com/RingKoAI/RingRouter/internal/model"
 )
 
 func TestExtractGeminiModel(t *testing.T) {
@@ -19,6 +25,45 @@ func TestExtractGeminiModel(t *testing.T) {
 		if got := extractGeminiModel(c.path); got != c.want {
 			t.Errorf("extractGeminiModel(%q) = %q, want %q", c.path, got, c.want)
 		}
+	}
+}
+
+func TestQuotaAndCreditsUseEffectiveTokenBalance(t *testing.T) {
+	h := &Proxy{}
+	u := &model.User{ID: 7, Quota: 1000, UsedQuota: 200}
+	if limit, used := effectiveQuota(u, &model.Token{Quota: 500, UsedQuota: 125}); limit != 625 || used != 125 {
+		t.Fatalf("effective token quota = (%d, %d), want (625, 125)", limit, used)
+	}
+	if limit, used := effectiveQuota(u, nil); limit != 1200 || used != 200 {
+		t.Fatalf("effective user quota = (%d, %d), want (1200, 200)", limit, used)
+	}
+	ctx := middleware.WithUser(httptest.NewRequest(http.MethodGet, "/", nil).Context(), u)
+
+	for _, tc := range []struct {
+		name string
+		call http.HandlerFunc
+		want map[string]interface{}
+	}{
+		{"quota", h.QuotaLimit, map[string]interface{}{"limit": float64(1200), "used": float64(200), "remaining": float64(1000)}},
+		{"credits", h.Credits, map[string]interface{}{"credits": float64(1000), "balance": float64(1000)}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+			rec := httptest.NewRecorder()
+			tc.call(rec, req)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+			}
+			var got map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+				t.Fatal(err)
+			}
+			for key, want := range tc.want {
+				if got[key] != want {
+					t.Errorf("%s = %v, want %v", key, got[key], want)
+				}
+			}
+		})
 	}
 }
 

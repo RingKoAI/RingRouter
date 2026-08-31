@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -34,13 +35,18 @@ func newHTTPProvider(name, apiKey, baseURL string) httpProvider {
 // maxRedirects bounds how far an upstream may bounce a request.
 const maxRedirects = 3
 
+const maxProviderResponseBytes = 16 << 20
+
 // newUpstreamClient builds the shared outbound client with a redirect policy
 // that re-applies the SSRF private-address policy on every hop, so a public
 // channel URL cannot 302 the gateway into an internal endpoint when
 // CHANNEL_ALLOW_PRIVATE_ADDR=false.
 func newUpstreamClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = safeDialContext
 	return &http.Client{
-		Timeout: 120 * time.Second,
+		Timeout:   120 * time.Second,
+		Transport: transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= maxRedirects {
 				return fmt.Errorf("%s: too many redirects", "upstream")
@@ -51,6 +57,40 @@ func newUpstreamClient() *http.Client {
 			return nil
 		},
 	}
+}
+
+// safeDialContext resolves and validates every address immediately before the
+// socket connection. This closes the DNS-rebinding gap between URL validation
+// and net/http's later resolver call. TLS still receives the original host
+// name, while the TCP socket is opened against the validated IP.
+func safeDialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	dialer := &net.Dialer{Timeout: 30 * time.Second}
+	if !safenet.PrivateAddrDenied() {
+		return dialer.DialContext(ctx, network, address)
+	}
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid upstream address")
+	}
+	ips, err := net.LookupIP(host)
+	if err != nil || len(ips) == 0 {
+		return nil, fmt.Errorf("upstream host resolution failed")
+	}
+	var lastErr error
+	for _, ip := range ips {
+		if safenet.IsPrivateIP(ip) {
+			continue
+		}
+		conn, dialErr := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
+		if dialErr == nil {
+			return conn, nil
+		}
+		lastErr = dialErr
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, fmt.Errorf("all resolved upstream addresses are private")
 }
 
 // do sends a request and returns the raw response body. The caller owns

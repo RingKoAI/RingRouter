@@ -37,10 +37,13 @@ export default function Playground() {
     setInput('')
     setStreaming(true)
 
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 120_000)
     try {
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key.trim()}` },
+        signal: controller.signal,
         body: JSON.stringify({
           model: model.trim(),
           messages: history.map((m) => ({ role: m.role, content: m.content })),
@@ -81,9 +84,10 @@ export default function Playground() {
       }
       if (!acc) setMsgs([...history, { role: 'assistant', content: t('pg.emptyResponse') }])
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('users.errNetwork'))
+      setError(e instanceof DOMException && e.name === 'AbortError' ? t('pg.timeout') : e instanceof Error ? e.message : t('users.errNetwork'))
       setMsgs(history)
     } finally {
+      window.clearTimeout(timeout)
       setStreaming(false)
     }
   }

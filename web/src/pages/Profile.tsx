@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Fingerprint, Plus, Trash2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { api, APIError } from '../lib/api'
-import { registerPasskey, isPasskeySupported } from '../lib/webauthn'
+import { registerPasskey, isPasskeySupported, passkeyErrorCode } from '../lib/webauthn'
+import { useSite } from '../contexts/SiteContext'
 
 interface Passkey {
   id: number
@@ -15,6 +16,7 @@ interface Passkey {
 
 export default function Profile() {
   const { t } = useTranslation()
+  const { passkeyEnabled } = useSite()
   const [keys, setKeys] = useState<Passkey[]>([])
   const [loading, setLoading] = useState(true)
   const [registering, setRegistering] = useState(false)
@@ -48,8 +50,7 @@ export default function Profile() {
       setInfo(t('profile.passkeyAdded'))
       await load()
     } catch (e) {
-      const msg = e instanceof Error ? e.message : ''
-      setError(msg === 'passkey-cancelled' ? t('profile.passkeyCancelled') : t('profile.passkeyFailed'))
+      setError(t(`auth.passkeyErrors.${passkeyErrorCode(e)}`))
     } finally {
       setRegistering(false)
     }
@@ -92,13 +93,23 @@ export default function Profile() {
           />
           <button
             onClick={register}
-            disabled={registering || !passkeySupported}
+            disabled={registering || !passkeyEnabled || !passkeySupported}
             className="inline-flex items-center justify-center gap-2 min-h-[40px] px-4 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             {registering ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
             {t('profile.register')}
           </button>
         </div>
+        {!passkeyEnabled && (
+          <p className="text-sm text-amber-700 dark:text-amber-300 mt-2" role="status">
+            {t('auth.passkeyDisabledByAdmin')}
+          </p>
+        )}
+        {passkeyEnabled && !passkeySupported && (
+          <p className="text-sm text-amber-700 dark:text-amber-300 mt-2" role="status">
+            {t('auth.passkeyErrors.unsupported')}
+          </p>
+        )}
         {info && <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">{info}</p>}
         {error && <p className="text-sm text-destructive mt-2" role="alert">{error}</p>}
       </div>

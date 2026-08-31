@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -176,7 +177,7 @@ func (p *GoogleProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.C
 	}
 	defer resp.Body.Close()
 	var out googleGenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&out); err != nil {
 		return nil, fmt.Errorf("google: decode response: %w", err)
 	}
 	return fromGoogle(&out, req.Model), nil
@@ -202,7 +203,7 @@ func (p *GoogleProvider) Models(ctx context.Context) ([]dto.Model, error) {
 			DisplayName string `json:"displayName"`
 		} `json:"models"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&list); err != nil {
 		return nil, fmt.Errorf("google: decode models: %w", err)
 	}
 	out := make([]dto.Model, 0, len(list.Models))

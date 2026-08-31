@@ -21,6 +21,8 @@ func Setup(proxy *handler.Proxy, auth *middleware.Auth, sess *middleware.Session
 	// OpenAI
 	api.HandleFunc("POST /chat/completions", proxy.ChatCompletion)
 	api.HandleFunc("GET /models", proxy.ListModels)
+	api.HandleFunc("GET /usage/quota/limit", proxy.QuotaLimit)
+	api.HandleFunc("GET /credits", proxy.Credits)
 	// OpenAI Responses API
 	api.HandleFunc("POST /responses", proxy.ChatCompletion)
 	// Anthropic

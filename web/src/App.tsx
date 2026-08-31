@@ -36,18 +36,37 @@ function FullScreenSpinner() {
 }
 
 function useSetupStatus() {
-  const [status, setStatus] = useState<'loading' | 'needed' | 'done'>('loading')
+  const [status, setStatus] = useState<'loading' | 'needed' | 'done' | 'error'>('loading')
   useEffect(() => {
     api.get<{ needed: boolean }>('/api/setup/status')
       .then((d) => setStatus(d.needed ? 'needed' : 'done'))
-      .catch(() => setStatus('done'))
+      // A failed status check must not be treated as "setup complete".
+      // Otherwise a fresh instance can bypass the wizard into a broken login.
+      .catch(() => setStatus('error'))
   }, [])
   return status
+}
+
+function SetupUnavailable() {
+  const { t } = useTranslation()
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 text-center">
+      <div className="max-w-sm space-y-3">
+        <h1 className="text-lg font-semibold">{t('common.serviceUnavailable')}</h1>
+        <p className="text-sm text-muted-foreground">{t('common.serviceUnavailableDesc')}</p>
+        <button onClick={() => window.location.reload()}
+          className="min-h-[40px] px-4 rounded-xl bg-primary text-primary-foreground text-sm hover:bg-primary-dark transition-colors cursor-pointer whitespace-nowrap">
+          {t('common.retry')}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function SetupGate({ children }: { children: React.ReactNode }) {
   const status = useSetupStatus()
   if (status === 'loading') return <FullScreenSpinner />
+  if (status === 'error') return <SetupUnavailable />
   if (status === 'needed') return <Navigate to="/setup" replace />
   return <>{children}</>
 }
@@ -55,6 +74,7 @@ function SetupGate({ children }: { children: React.ReactNode }) {
 function BlockSetupWhenDone({ children }: { children: React.ReactNode }) {
   const status = useSetupStatus()
   if (status === 'loading') return <FullScreenSpinner />
+  if (status === 'error') return <SetupUnavailable />
   if (status === 'done') return <Navigate to="/auth/login" replace />
   return <>{children}</>
 }

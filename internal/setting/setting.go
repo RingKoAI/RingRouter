@@ -162,8 +162,13 @@ func Set(key, value string) error {
 		return nil
 	}
 	if value == "" {
+		if err := database.DB.Where("key = ?", key).Delete(&model.Option{}).Error; err != nil {
+			return err
+		}
+		mu.Lock()
 		delete(cache, key)
-		return database.DB.Where("key = ?", key).Delete(&model.Option{}).Error
+		mu.Unlock()
+		return nil
 	}
 	if err := database.DB.Save(&model.Option{Key: key, Value: value}).Error; err != nil {
 		return err

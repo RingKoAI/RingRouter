@@ -125,7 +125,7 @@ export default function UserDialogs({ dialog, onClose, onRefresh, groups }: Prop
           </div>
         )}
         {dialog.kind === 'password' && (
-          <input type="password" value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('users.newPwdHint')} className={inputCls} autoFocus />
+          <input type="password" value={value} maxLength={72} onChange={(e) => setValue(e.target.value)} placeholder={t('users.newPwdHint')} className={inputCls} autoFocus />
         )}
         {dialog.kind === 'quota' && (
           <input type="text" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/[^\d-]/g, ''))} placeholder={t('users.quotaHint')} className={inputCls} autoFocus />

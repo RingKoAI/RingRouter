@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
 )
@@ -139,7 +140,7 @@ func (p *AnthropicProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dt
 	}
 	defer resp.Body.Close()
 	var ar2 anthropicResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ar2); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&ar2); err != nil {
 		return nil, fmt.Errorf("anthropic: decode response: %w", err)
 	}
 	return fromAnthropic(&ar2), nil
@@ -168,7 +169,7 @@ func (p *AnthropicProvider) Models(ctx context.Context) ([]dto.Model, error) {
 			DisplayName string `json:"display_name"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&list); err != nil {
 		return nil, fmt.Errorf("anthropic: decode models: %w", err)
 	}
 	out := make([]dto.Model, 0, len(list.Data))

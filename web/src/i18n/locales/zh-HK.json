@@ -100,6 +100,16 @@
     "or": "或",
     "passkeyLogin": "使用通行密鑰登入",
     "passkeyFailed": "通行密鑰驗證失敗，請重試",
+    "passkeyDisabledByAdmin": "管理員未開啟通行密鑰登入",
+    "passkeyErrors": {
+      "cancelled": "已取消通行密鑰操作",
+      "disabled": "管理員未開啟通行密鑰登入",
+      "unsupported": "目前瀏覽器或存取環境不支援通行密鑰，請使用支援 WebAuthn 的瀏覽器並透過 HTTPS 存取",
+      "alreadyRegistered": "這個通行密鑰已經註冊，無需重複新增",
+      "originMismatch": "目前網域與管理員設定的 RP ID 或 Origin 不符",
+      "sessionExpired": "登入工作階段已過期，請重新登入後再註冊通行密鑰",
+      "rejected": "通行密鑰請求遭拒，請檢查帳戶、裝置或管理員設定後重試"
+    },
     "passkeyEnroll": "還未有通行密鑰？註冊一個",
     "passkeyEnrollTitle": "註冊通行密鑰",
     "passkeyEnrollDesc": "先驗證帳號密碼確認身份，然後按裝置提示完成註冊。之後即可用通行密鑰免密登入。",
@@ -482,7 +492,8 @@
     "placeholder": "輸入訊息，Enter 發送，Shift+Enter 換行",
     "clear": "清空對話",
     "hint": "設定金鑰與模型後開始對話",
-    "emptyResponse": "（空回應）"
+    "emptyResponse": "（空回應）",
+    "timeout": "請求逾時，已自動停止。"
   },
   "plaza": {
     "title": "模型廣場",
@@ -530,7 +541,10 @@
     "comingSoon": "該功能即將上線",
     "notFoundTitle": "頁面不存在",
     "notFoundDesc": "你訪問的地址不存在或已被移動。",
-    "backHome": "返回首頁"
+    "backHome": "返回首頁",
+    "serviceUnavailable": "服務暫時無法使用",
+    "serviceUnavailableDesc": "無法讀取安裝狀態，請檢查服務後重試。",
+    "retry": "重試"
   },
   "footer": {
     "tagline": "一個網關，所有供應商 — 多協議 LLM API 網關",

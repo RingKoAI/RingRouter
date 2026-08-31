@@ -5,7 +5,10 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +25,9 @@ import (
 
 // challengeTTL bounds the registration/login ceremony window.
 const challengeTTL = 2 * time.Minute
+
+const maxPasskeyBodyBytes = 256 << 10
+const maxPendingChallenges = 4096
 
 /* ── Challenge store ─────────────────────────────────────────────────────── */
 
@@ -51,6 +57,15 @@ func (s *challengeStore) put(key string, e *challengeEntry) {
 	for k, v := range s.entries {
 		if now.After(v.expires) {
 			delete(s.entries, k)
+		}
+	}
+	// Bound memory even when a distributed caller rotates source IPs faster
+	// than the two-minute TTL can expire entries. Any evicted entry merely
+	// forces its ceremony to retry.
+	if len(s.entries) >= maxPendingChallenges {
+		for k := range s.entries {
+			delete(s.entries, k)
+			break
 		}
 	}
 	e.expires = now.Add(challengeTTL)
@@ -145,6 +160,49 @@ func (h *PasskeyHandler) webAuthn() *webauthn.WebAuthn {
 	return w
 }
 
+// validatePasskeySettings validates the WebAuthn relying-party boundary.
+// Origins must be absolute origins (no path/query/userinfo), must use HTTPS
+// except for localhost development, and must belong to the configured RP ID.
+// Keeping this check shared by setup/settings prevents a configuration that
+// saves successfully but can never complete a browser ceremony.
+func validatePasskeySettings(rpID, rawOrigins string) error {
+	rpID = strings.ToLower(strings.TrimSpace(rpID))
+	if rpID == "" || len(rpID) > 253 || strings.HasPrefix(rpID, ".") || strings.HasSuffix(rpID, ".") || strings.Contains(rpID, "..") {
+		return fmt.Errorf("invalid rp_id")
+	}
+	if net.ParseIP(rpID) == nil {
+		for _, label := range strings.Split(rpID, ".") {
+			if label == "" || strings.HasPrefix(label, "-") || strings.HasSuffix(label, "-") {
+				return fmt.Errorf("invalid rp_id")
+			}
+			for _, c := range label {
+				if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+					return fmt.Errorf("invalid rp_id")
+				}
+			}
+		}
+	}
+
+	origins := strings.Split(rawOrigins, ",")
+	if len(origins) == 0 {
+		return fmt.Errorf("at least one origin is required")
+	}
+	for _, raw := range origins {
+		u, err := url.Parse(strings.TrimSpace(raw))
+		if err != nil || u.Hostname() == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+			return fmt.Errorf("invalid rp_origins")
+		}
+		host := strings.ToLower(u.Hostname())
+		if u.Scheme != "https" && !(u.Scheme == "http" && (host == "localhost" || net.ParseIP(host) != nil)) {
+			return fmt.Errorf("origins must use HTTPS, except localhost development")
+		}
+		if host != rpID && !strings.HasSuffix(host, "."+rpID) {
+			return fmt.Errorf("origin host must match or be a subdomain of rp_id")
+		}
+	}
+	return nil
+}
+
 /* ── Registration (session required) ─────────────────────────────────────── */
 
 // RegisterBegin starts credential enrollment for the signed-in user.
@@ -193,6 +251,7 @@ func (h *PasskeyHandler) RegisterFinish(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxPasskeyBodyBytes)
 	parsed, err := protocol.ParseCredentialCreationResponseBody(r.Body)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid registration payload: "+err.Error())
@@ -312,6 +371,7 @@ func (h *PasskeyHandler) LoginFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxPasskeyBodyBytes)
 	parsed, err := protocol.ParseCredentialRequestResponseBody(r.Body)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid assertion payload: "+err.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/RingKoAI/RingRouter/internal/dto"
 )
@@ -40,7 +41,7 @@ func (p *OpenAIProvider) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.C
 	}
 	defer resp.Body.Close()
 	var out dto.ChatResponse
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&out); err != nil {
 		return nil, fmt.Errorf("openai: decode response: %w", err)
 	}
 	return &out, nil
@@ -68,7 +69,7 @@ func (p *OpenAIProvider) Models(ctx context.Context) ([]dto.Model, error) {
 	}
 	defer resp.Body.Close()
 	var list dto.ModelList
-	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxProviderResponseBytes)).Decode(&list); err != nil {
 		return nil, fmt.Errorf("openai: decode models: %w", err)
 	}
 	return list.Data, nil

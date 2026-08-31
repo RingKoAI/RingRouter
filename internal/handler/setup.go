@@ -228,20 +228,30 @@ func (h *SetupHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	if req.Passkey != nil && req.Passkey.Enabled {
 		rpID := strings.TrimSpace(req.Passkey.RPID)
 		origins := strings.TrimSpace(req.Passkey.Origins)
-		if rpID == "" || len(rpID) > 253 {
-			writeAPIError(w, http.StatusBadRequest, "passkey rp_id must be 1-253 characters")
+		if len(origins) > 1024 {
+			writeAPIError(w, http.StatusBadRequest, "passkey rp_origins must be at most 1024 characters")
 			return
 		}
-		if origins == "" || len(origins) > 1024 {
-			writeAPIError(w, http.StatusBadRequest, "passkey rp_origins must be 1-1024 characters")
+		if err := validatePasskeySettings(rpID, origins); err != nil {
+			writeAPIError(w, http.StatusBadRequest, "invalid passkey rp_id or rp_origins")
 			return
 		}
 	}
 
 	// Validate SMTP block when supplied.
+	if req.SMTP != nil {
+		req.SMTP.Host = strings.TrimSpace(req.SMTP.Host)
+		req.SMTP.From = normalizeEmail(req.SMTP.From)
+	}
 	if req.SMTP != nil && (req.SMTP.Host == "" || req.SMTP.Port <= 0 || req.SMTP.Port > 65535 || req.SMTP.From == "") {
 		writeAPIError(w, http.StatusBadRequest, "smtp requires host, port and from")
 		return
+	}
+	if req.SMTP != nil {
+		if err := safenet.ValidateOutboundHost(req.SMTP.Host); err != nil {
+			writeAPIError(w, http.StatusBadRequest, "private or loopback SMTP hosts are not allowed on this deployment")
+			return
+		}
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)

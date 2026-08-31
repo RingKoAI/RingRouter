@@ -110,7 +110,7 @@ ADMIN_KEY=change-me ./ringrouter
 | `DB_TYPE` | `postgres` / `mysql` / `sqlite` | `postgres` |
 | `DB_DSN` | PG / MySQL 连接串 | — |
 | `DB_PATH` | SQLite 文件路径（仅 sqlite） | `data/ringrouter.db` |
-| `ADMIN_KEY` | 管理引导密钥，可换取管理会话 | 随机 |
+| `ADMIN_KEY` | 可选管理引导密钥，可换取管理会话；留空则仅通过安装向导/管理员密码登录 | 未启用 |
 | `JWT_SECRET` | 密钥密封与签名盐（AES-GCM 派生）；留空时自动生成 256bit 随机值并持久化到 `data/.instance_secret`（0600） | 自动生成并持久化 |
 | `ENCRYPTION_KEY` | 独立加密密钥（hex 32 字节），优先于 `JWT_SECRET` 派生 | — |
 | `REDIS_CONN_STRING` | `redis://[user[:pass]@]host:port/db`，设置即启用共享缓存 | 未启用 |
@@ -151,6 +151,21 @@ curl "http://localhost:3000/v1beta/models/gemini-2.0-flash:generateContent" \
 ```
 
 5. **公开模型广场**：`/models` 无需登录，浏览全部可用模型与分组倍率
+
+6. **查询配额与 credits**（需要同一 `sk-rr-…` API 密钥）：
+
+```bash
+# 有效配额上限、已用额度与剩余额度
+curl http://localhost:3000/v1/usage/quota/limit \
+  -H "Authorization: Bearer sk-rr-xxxx"
+
+# 兼容 credits 查询客户端
+curl http://localhost:3000/v1/credits \
+  -H "Authorization: Bearer sk-rr-xxxx"
+```
+
+两个接口返回的数值单位均为 RingRouter quota points；当用户配额与 API
+密钥配额同时存在时，返回较严格的有效余额，不会泄露密钥内容。
 
 ## 与 one-api 的差异
 

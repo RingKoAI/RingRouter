@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/RingKoAI/RingRouter/internal/database"
+	"github.com/RingKoAI/RingRouter/internal/safenet"
 	"github.com/RingKoAI/RingRouter/internal/setting"
 )
 
@@ -138,8 +139,14 @@ func (h *SettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// SMTP block: only when supplied.
 	if req.SMTP != nil {
+		req.SMTP.Host = strings.TrimSpace(req.SMTP.Host)
+		req.SMTP.From = normalizeEmail(req.SMTP.From)
 		if req.SMTP.Host == "" || req.SMTP.Port <= 0 || req.SMTP.Port > 65535 || req.SMTP.From == "" {
 			writeAPIError(w, http.StatusBadRequest, "smtp requires host, port and from")
+			return
+		}
+		if err := safenet.ValidateOutboundHost(req.SMTP.Host); err != nil {
+			writeAPIError(w, http.StatusBadRequest, "private or loopback SMTP hosts are not allowed on this deployment")
 			return
 		}
 		// Seal the password (if any) and write each field.
@@ -177,6 +184,18 @@ func (h *SettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Passkey block: only when supplied.
 	if req.Passkey != nil {
+		rpID := setting.Passkey().RPID
+		origins := strings.Join(setting.Passkey().Origins, ",")
+		if req.Passkey.RPID != nil {
+			rpID = strings.TrimSpace(*req.Passkey.RPID)
+		}
+		if req.Passkey.Origins != nil {
+			origins = strings.TrimSpace(*req.Passkey.Origins)
+		}
+		if len(origins) > 1024 || validatePasskeySettings(rpID, origins) != nil {
+			writeAPIError(w, http.StatusBadRequest, "invalid passkey rp_id or rp_origins")
+			return
+		}
 		if req.Passkey.RPID != nil {
 			rpID := strings.TrimSpace(*req.Passkey.RPID)
 			if rpID == "" || len(rpID) > 253 {

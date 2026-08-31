@@ -23,7 +23,9 @@ services:
       # Redis（可选共享缓存；不设 REDIS_CONN_STRING 即禁用，one-api 语义）
       REDIS_CONN_STRING: "${REDIS_CONN_STRING:-redis://:${REDIS_PASSWORD:-}@redis:6379}"
       # 认证（生产必须替换：openssl rand -hex 32）
-      ADMIN_KEY: "${ADMIN_KEY:-ringrouter-admin-key}"
+      # Empty by default: bootstrap through /setup instead of shipping a
+      # universal administrator credential.
+      ADMIN_KEY: "${ADMIN_KEY:-}"
       JWT_SECRET: "${JWT_SECRET:-}"
       # 信任来自 Docker 网关/内网反代的转发头；留空则仅信任 loopback
       TRUSTED_PROXIES: "${TRUSTED_PROXIES:-}"
